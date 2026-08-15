@@ -2,5 +2,11 @@
 name = "carlae"
 version = "0.1.0"
 edition = "2024"
+description = "Carlae is a minimal subset of Python, powered by Rust."
+homepage = "https://github.com/sharmuz/carlae"
+repository = "https://github.com/sharmuz/carlae"
+license = "MIT OR Apache-2.0"
+keywords = ["python"]
+categories = ["interpreters"]
 
 [dependencies]
