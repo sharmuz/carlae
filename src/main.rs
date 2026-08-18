@@ -1,43 +1,11 @@
 use std::{error::Error, str::FromStr};
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let input = "123 32.0 87\t12.3  0\n";
+    let input = "123 * 32.0 + 87\t12.3 - /  0\n";
     println!("\nInput is: {input}");
     let tokens = scan(&input)?;
     println!("\nTokens are: {tokens:?}");
     Ok(())
-}
-
-#[derive(Debug, PartialEq)]
-enum Token {
-    Number(Number),
-}
-
-impl FromStr for Token {
-    type Err = ScanError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self::Number(Number::from_str(s)?))
-    }
-}
-
-#[derive(Debug, PartialEq)]
-enum Number {
-    Integer(isize),
-    Float(f64),
-}
-
-impl FromStr for Number {
-    type Err = ScanError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if let Ok(val) = s.parse::<isize>() {
-            Ok(Self::Integer(val))
-        } else {
-            let val = s.parse::<f64>().map_err(|_| ScanError)?;
-            Ok(Self::Float(val))
-        }
-    }
 }
 
 // NEWLINE
@@ -62,6 +30,84 @@ impl FromStr for Number {
 // SLASH
 // EQUAL
 
+#[derive(Debug, PartialEq)]
+enum Token {
+    Number(Number),
+    Operator(Op)
+}
+
+impl FromStr for Token {
+    type Err = ScanError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if let Ok(num) = Number::from_str(s) {
+            Ok(Self::Number(num))
+        } else if let Ok(op) = Op::from_str(s) {
+            Ok(Self::Operator(op))
+        } else {
+            Err(ScanError)
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+enum Number {
+    Integer(isize),
+    Float(f64),
+}
+
+impl FromStr for Number {
+    type Err = ScanError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if let Ok(int) = s.parse::<isize>() {
+            Ok(Self::Integer(int))
+        } else {
+            let float = s.parse::<f64>().map_err(|_| ScanError)?;
+            Ok(Self::Float(float))
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+enum Op {
+    ArithmeticOp(ArithmeticOp)
+}
+
+impl FromStr for Op {
+    type Err = ScanError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self::ArithmeticOp(ArithmeticOp::from_str(s)?))
+    }
+}
+
+#[derive(Debug, PartialEq)]
+enum ArithmeticOp {
+    Plus,
+    Minus,
+    Star,
+    Slash,
+}
+
+impl FromStr for ArithmeticOp {
+    type Err = ScanError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s == "+" {
+            Ok(Self::Plus)
+        } else if s == "-" {
+            Ok(Self::Minus)
+        } else if s == "*" {
+            Ok(Self::Star)
+        } else if s == "/" {
+            Ok(Self::Slash)
+        } else {
+            Err(ScanError)
+        }
+    }
+}
+
 #[derive(Debug)]
 struct ScanError;
 
@@ -78,6 +124,7 @@ fn scan(input: &str) -> Result<Vec<Token>, ScanError> {
     let mut t = String::new();
 
     for ch in input.chars() {
+        // TODO: handle ops and delims
         if ch.is_whitespace() {
             if !t.is_empty() {
                 tokens.push(Token::from_str(&t)?);
