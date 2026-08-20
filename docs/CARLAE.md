@@ -1,26 +1,39 @@
 # The Carlae Language Reference
 
-This document describes the Carlae programming language, which is a proper subset of Python. As it is new and under active development, this may be inexact and incomplete. However, the core semantics and features should become apparent.
+This document describes the Carlae programming language, which is a minimal, Python-like language. As it is new and under active development, this may be inexact and incomplete. However, the core semantics and features should become apparent.
+
+## Types
+
+- Dynamic typing only!
+- ~~int~~
+- float
+- string
+- bool
+- None
+
+## Expressions
+
+- Binary ops + - * /
+- Negation op -
+- Comparison ops < > <= >=
+- Equality == !=
+- Logical ops and or not !
+- Parentheses ()
 
 ## Statements
 
 - return
-- if
+- if else
 - while
+- ~~for~~
+- assignment op =
 
-## Built-in functions
+## Functions
 
-- print
+- print (built-in)
+- def
+- ~~closures~~
 
-## Built-in types
+## Memory management
 
-- identifier
-- int
-- string
-- constant (bool)
-
-## Expressions
-
-- Named expr
-- Binary op
-- Lambda
+- ~~GC~~
