@@ -1,168 +1,51 @@
-use std::{error::Error, str::FromStr};
+use std::{
+    fs::File,
+    io::{BufReader, Read},
+    path::Path,
+};
 
-fn main() -> Result<(), Box<dyn Error>> {
-    let input = "123 * 32.0 + 87\t12.3 - /  0\n";
-    println!("\nInput is: {input}");
-    let tokens = scan(&input)?;
-    println!("\nTokens are: {tokens:?}");
+use crate::error::CarlaeError;
+use crate::scanner::Scanner;
+
+mod error;
+mod scanner;
+mod token;
+
+fn main() -> Result<(), CarlaeError> {
+    let mut args = std::env::args().skip(1);
+
+    if args.len() > 1 {
+        Err(CarlaeError::General("Usage: carlae [script]".into()))
+    } else if let Some(path) = args.next() {
+        run_file(&path)
+    } else {
+        // Err(CarlaeError::General("No REPL >:(".into()))
+        // TODO: Write and call run_prompt()
+
+        run("( **/ \t=-(*) )==# lalalala +=3 #EOF".to_string())
+    }
+}
+
+fn run_file(path: impl AsRef<Path>) -> Result<(), CarlaeError> {
+    let file = File::open(path)?;
+    let mut reader = BufReader::new(file);
+    let mut source = String::new();
+
+    // TODO: Replace with one-liner?
+    if let Err(e) = reader.read_to_string(&mut source) {
+        Err(CarlaeError::Io(e))
+    } else {
+        run(source)
+    }
+}
+
+fn run(source: String) -> Result<(), CarlaeError> {
+    let mut scanner = Scanner::new(source);
+    scanner.scan_tokens()?;
+
+    for t in scanner.tokens.iter() {
+        println!("{t:?}")
+    }
+
     Ok(())
-}
-
-// NEWLINE
-// INDENT
-// DEDENT
-
-// identifiers + keywords
-// NAME
-
-// Literals
-// NUMBER
-// STRING
-// BYTES
-
-// Operators + delimeters
-// OP
-// LPAR
-// RPAR
-// PLUS
-// MINUS
-// STAR
-// SLASH
-// EQUAL
-
-#[derive(Debug, PartialEq)]
-enum Token {
-    Number(Number),
-    Operator(Op)
-}
-
-impl FromStr for Token {
-    type Err = ScanError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if let Ok(num) = Number::from_str(s) {
-            Ok(Self::Number(num))
-        } else if let Ok(op) = Op::from_str(s) {
-            Ok(Self::Operator(op))
-        } else {
-            Err(ScanError)
-        }
-    }
-}
-
-#[derive(Debug, PartialEq)]
-enum Number {
-    Integer(isize),
-    Float(f64),
-}
-
-impl FromStr for Number {
-    type Err = ScanError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if let Ok(int) = s.parse::<isize>() {
-            Ok(Self::Integer(int))
-        } else {
-            let float = s.parse::<f64>().map_err(|_| ScanError)?;
-            Ok(Self::Float(float))
-        }
-    }
-}
-
-#[derive(Debug, PartialEq)]
-enum Op {
-    ArithmeticOp(ArithmeticOp)
-}
-
-impl FromStr for Op {
-    type Err = ScanError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self::ArithmeticOp(ArithmeticOp::from_str(s)?))
-    }
-}
-
-#[derive(Debug, PartialEq)]
-enum ArithmeticOp {
-    Plus,
-    Minus,
-    Star,
-    Slash,
-}
-
-impl FromStr for ArithmeticOp {
-    type Err = ScanError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s == "+" {
-            Ok(Self::Plus)
-        } else if s == "-" {
-            Ok(Self::Minus)
-        } else if s == "*" {
-            Ok(Self::Star)
-        } else if s == "/" {
-            Ok(Self::Slash)
-        } else {
-            Err(ScanError)
-        }
-    }
-}
-
-#[derive(Debug)]
-struct ScanError;
-
-impl std::fmt::Display for ScanError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Unable to scan!")
-    }
-}
-
-impl Error for ScanError {}
-
-fn scan(input: &str) -> Result<Vec<Token>, ScanError> {
-    let mut tokens = vec![];
-    let mut t = String::new();
-
-    for ch in input.chars() {
-        // TODO: handle ops and delims
-        if ch.is_whitespace() {
-            if !t.is_empty() {
-                tokens.push(Token::from_str(&t)?);
-                t.clear();
-            }
-        } else {
-            t.push(ch);
-        }
-    }
-
-    if !t.is_empty() {
-        tokens.push(Token::from_str(&t)?);
-    }
-
-    Ok(tokens)
-}
-
-// fn parse
-
-// fn eval
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn scan_whitespace_delim_numbers() {
-        let input = "123 32.0 87\t12.3  0\n";
-        let expected: Vec<Token> = vec![
-            Token::Number(Number::Integer(123)),
-            Token::Number(Number::Float(32.0)),
-            Token::Number(Number::Integer(87)),
-            Token::Number(Number::Float(12.3)),
-            Token::Number(Number::Integer(0)),
-        ];
-
-        let tokens = scan(&input).expect("Input string scanned into tokens");
-
-        assert_eq!(tokens, expected);
-    }
 }

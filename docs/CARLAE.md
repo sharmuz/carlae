@@ -37,3 +37,7 @@ This document describes the Carlae programming language, which is a minimal, Pyt
 ## Memory management
 
 - ~~GC~~
+
+## Other
+
+- Comments
