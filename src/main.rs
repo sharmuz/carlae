@@ -22,7 +22,8 @@ fn main() -> Result<(), CarlaeError> {
         // Err(CarlaeError::General("No REPL >:(".into()))
         // TODO: Write and call run_prompt()
 
-        run("( **/ \t=-(*) )==# lalalala +=3 #EOF".to_string())
+        // run("( **/ \t=-(*) )==# lalalala +=3 #EOF".to_string())
+        run("(123+ 456.000001)==579 #lol".to_string())
     }
 }
 

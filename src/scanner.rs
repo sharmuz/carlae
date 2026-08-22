@@ -1,3 +1,6 @@
+use std::slice;
+use std::str::FromStr;
+
 use crate::error::CarlaeError;
 use crate::token::{Token, TokenKind};
 
@@ -74,6 +77,7 @@ impl Scanner {
                 };
                 self.add_token(kind);
             }
+            n if n.is_ascii_digit() => self.number()?,
             '#' => {
                 while let Some(ch) = self.peek() {
                     if ch != '\n' {
@@ -84,7 +88,7 @@ impl Scanner {
                 }
             }
             x if x.is_whitespace() => {
-                // TODO: Handle indent/dedent whitespace
+                // TODO: Tokenize newline/indent/dedent whitespace
                 if x == '\n' {
                     self.line += 1;
                 }
@@ -118,6 +122,10 @@ impl Scanner {
         self.source.chars().nth(self.current)
     }
 
+    fn peek_next(&self) -> Option<char> {
+        self.source.chars().nth(self.current + 1)
+    }
+
     fn matches_current(&mut self, expected: char) -> bool {
         if self.source.chars().nth(self.current) == Some(expected) {
             self.current += 1;
@@ -126,13 +134,37 @@ impl Scanner {
         false
     }
 
+    fn number(&mut self) -> Result<(), CarlaeError> {
+        while let Some(ch) = self.peek()
+            && ch.is_ascii_digit()
+        {
+            _ = self.advance()?;
+        }
+        if let Some('.') = self.peek()
+            && let Some(ch) = self.peek_next()
+            && ch.is_ascii_digit()
+        {
+            _ = self.advance()?;
+
+            while let Some(ch) = self.peek()
+                && ch.is_ascii_digit()
+            {
+                _ = self.advance()?;
+            }
+        }
+        // TODO: Avoid alloc
+        let num = self.source_substring().collect::<String>();
+        self.add_token(TokenKind::from_str(&num)?);
+
+        Ok(())
+    }
+
     fn add_token(&mut self, kind: TokenKind) {
-        let text: String = self
-            .source
-            .chars()
-            .take(self.current)
-            .skip(self.start)
-            .collect();
+        let text: String = self.source_substring().collect();
         self.tokens.push(Token::new(kind, text, self.line))
+    }
+
+    fn source_substring(&self) -> impl Iterator<Item = char> {
+        self.source.chars().take(self.current).skip(self.start)
     }
 }
