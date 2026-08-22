@@ -4,15 +4,15 @@ use std::error::Error;
 pub enum CarlaeError {
     General(String),
     Io(std::io::Error),
-    Scan,
+    Scanning(String),
 }
 
 impl std::fmt::Display for CarlaeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::General(s) => write!(f, "{s}"),
-            Self::Io(e) => write!(f, "I/O error: {e}"),
-            Self::Scan => write!(f, "Unable to scan source code!"),
+            Self::Io(e) => write!(f, "{e}"),
+            Self::Scanning(s) => write!(f, "{s}"),
         }
     }
 }

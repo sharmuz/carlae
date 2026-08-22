@@ -84,11 +84,17 @@ impl Scanner {
                 }
             }
             x if x.is_whitespace() => {
+                // TODO: Handle indent/dedent whitespace
                 if x == '\n' {
                     self.line += 1;
                 }
             }
-            _ => return Err(CarlaeError::Scan),
+            _ => {
+                return Err(CarlaeError::Scanning(format!(
+                    "[Line {}] Unexpected character: {ch}",
+                    self.line
+                )));
+            }
         }
 
         Ok(())
@@ -99,7 +105,10 @@ impl Scanner {
     }
 
     fn advance(&mut self) -> Result<char, CarlaeError> {
-        let ch = self.peek().ok_or(CarlaeError::Scan)?;
+        let ch = self.peek().ok_or(CarlaeError::Scanning(format!(
+            "[Line {}] Reached end of file unexpectedly",
+            self.line
+        )))?;
         self.current += 1;
 
         Ok(ch)
@@ -117,7 +126,6 @@ impl Scanner {
         false
     }
 
-    // TODO: Confirm adding literal - via Box?
     fn add_token(&mut self, kind: TokenKind) {
         let text: String = self
             .source

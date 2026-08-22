@@ -69,7 +69,9 @@ impl FromStr for TokenKind {
         if let Ok(num) = s.parse::<f64>() {
             Ok(Self::Number(num))
         } else {
-            Err(CarlaeError::Scan)
+            Err(CarlaeError::Scanning(format!(
+                "Unable to parse to Number: {s}"
+            )))
         }
     }
 }
