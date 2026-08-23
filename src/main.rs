@@ -23,7 +23,8 @@ fn main() -> Result<(), CarlaeError> {
         // TODO: Write and call run_prompt()
 
         // run("( **/ \t=-(*) )==# lalalala +=3 #EOF".to_string())
-        run("(123+ 456.000001)==579 #lol".to_string())
+        // run("(123+ 456.000001)==579 #lol".to_string())
+        run(r#"3 "hello" 2"#.to_string())
     }
 }
 

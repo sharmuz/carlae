@@ -76,6 +76,7 @@ impl Scanner {
                 self.add_token(kind);
             }
             n if n.is_ascii_digit() => self.number()?,
+            s if s == '"' => self.string()?,
             '#' => {
                 while let Some(ch) = self.peek() {
                     if ch != '\n' {
@@ -158,6 +159,19 @@ impl Scanner {
             ))
         })?;
         self.add_token(TokenKind::Number(float));
+
+        Ok(())
+    }
+
+    // TODO: Handle escaped strings
+    fn string(&mut self) -> Result<(), CarlaeError> {
+        while let Some(ch) = self.peek() && ch != '"' {
+            self.advance()?;
+        }
+        self.advance()?;
+        let mut str = self.source_substring().skip(1).collect::<String>();
+        str.pop();
+        self.add_token(TokenKind::String(str));
 
         Ok(())
     }
