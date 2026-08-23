@@ -20,6 +20,7 @@ impl Scanner {
         }
     }
 
+    // TODO: Consider byte-based indexing instead of char-based
     pub fn scan_tokens(&mut self) -> Result<(), CarlaeError> {
         while !self.is_at_end() {
             // We are at the beginning of the next lexeme
@@ -102,11 +103,11 @@ impl Scanner {
     }
 
     fn is_at_end(&self) -> bool {
-        self.current >= self.source.len()
+        self.peek().is_none()
     }
 
     fn advance(&mut self) -> Result<char, CarlaeError> {
-        let ch = self.peek().ok_or(CarlaeError::Scanning(format!(
+        let ch = self.peek().ok_or_else(|| CarlaeError::Scanning(format!(
             "[Line {}] Reached end of file unexpectedly",
             self.line
         )))?;
