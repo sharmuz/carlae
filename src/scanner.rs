@@ -80,7 +80,7 @@ impl Scanner {
             '#' => {
                 while let Some(ch) = self.peek() {
                     if ch != '\n' {
-                        _ = self.advance()?;
+                        self.advance()?;
                     } else {
                         break;
                     }
@@ -137,18 +137,18 @@ impl Scanner {
         while let Some(ch) = self.peek()
             && ch.is_ascii_digit()
         {
-            _ = self.advance()?;
+            self.advance()?;
         }
         if let Some('.') = self.peek()
             && let Some(ch) = self.peek_next()
             && ch.is_ascii_digit()
         {
-            _ = self.advance()?;
+            self.advance()?;
 
             while let Some(ch) = self.peek()
                 && ch.is_ascii_digit()
             {
-                _ = self.advance()?;
+                self.advance()?;
             }
         }
         let num = self.source_substring().collect::<String>();
