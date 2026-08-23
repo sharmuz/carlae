@@ -1,6 +1,3 @@
-use std::slice;
-use std::str::FromStr;
-
 use crate::error::CarlaeError;
 use crate::token::{Token, TokenKind};
 
@@ -152,9 +149,14 @@ impl Scanner {
                 _ = self.advance()?;
             }
         }
-        // TODO: Avoid alloc
         let num = self.source_substring().collect::<String>();
-        self.add_token(TokenKind::from_str(&num)?);
+        let float = num.parse::<f64>().map_err(|_| {
+            CarlaeError::Scanning(format!(
+                "[Line {}] Unable to parse to Number: {num}",
+                self.line
+            ))
+        })?;
+        self.add_token(TokenKind::Number(float));
 
         Ok(())
     }

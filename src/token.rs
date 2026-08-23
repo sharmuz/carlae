@@ -1,7 +1,3 @@
-use std::str::FromStr;
-
-use crate::error::CarlaeError;
-
 #[derive(Debug)]
 pub struct Token {
     kind: TokenKind,
@@ -58,20 +54,4 @@ pub enum TokenKind {
     Indent,
     Dedent,
     Eof,
-}
-
-impl FromStr for TokenKind {
-    type Err = CarlaeError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // let num = s.parse::<f64>().map_err(|_| CarlaeError::Scan)?;
-
-        if let Ok(num) = s.parse::<f64>() {
-            Ok(Self::Number(num))
-        } else {
-            Err(CarlaeError::Scanning(format!(
-                "Unable to parse to Number: {s}"
-            )))
-        }
-    }
 }
