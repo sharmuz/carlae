@@ -43,6 +43,8 @@ impl Scanner {
             '-' => self.add_token(TokenKind::Minus),
             '*' => self.add_token(TokenKind::Star),
             '/' => self.add_token(TokenKind::Slash),
+            ',' => self.add_token(TokenKind::Comma),
+            ':' => self.add_token(TokenKind::Colon),
             '=' => {
                 let kind = if self.matches_current('=') {
                     TokenKind::EqualEqual

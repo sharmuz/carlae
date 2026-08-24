@@ -26,6 +26,8 @@ pub enum TokenKind {
     Minus,
     Slash,
     Star,
+    Comma,
+    Colon,
 
     // Two-char tokens
     Equal,
@@ -39,14 +41,20 @@ pub enum TokenKind {
     // Literals
     Number(f64),
     String(String),
-    Identifier,
+    Identifier(String),
 
     // Keywords
     If,
     Else,
+    While,
+    Def,
+    Return,
     True,
     False,
     None,
+    And,
+    Or,
+    Not,
 
     // Other
     Newline,
