@@ -24,7 +24,8 @@ fn main() -> Result<(), CarlaeError> {
 
         // run("( **/ \t=-(*) )==# lalalala +=3 #EOF".to_string())
         // run("(123+ 456.000001)==579 #lol".to_string())
-        run(r#"3 "hello" 2"#.to_string())
+        // run(r#"3 "hello" 2"#.to_string())
+        run(r#"drink = "banana_smoothie""#.to_string())
     }
 }
 

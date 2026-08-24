@@ -75,7 +75,8 @@ impl Scanner {
                 self.add_token(kind);
             }
             n if n.is_ascii_digit() => self.number()?,
-            s if s == '"' => self.string()?,
+            '"' => self.string()?,
+            s if s.is_alphanumeric() || s == '_' => self.identifier()?,
             '#' => {
                 while let Some(ch) = self.peek() {
                     if ch != '\n' {
@@ -171,6 +172,16 @@ impl Scanner {
         let mut str = self.source_substring().skip(1).collect::<String>();
         str.pop();
         self.add_token(TokenKind::String(str));
+
+        Ok(())
+    }
+
+    fn identifier(&mut self) -> Result<(), CarlaeError> {
+        while let Some(ch) = self.peek() && (ch.is_alphanumeric() || ch == '_')  {
+            self.advance()?;
+        }
+        let id = self.source_substring().collect();
+        self.add_token(TokenKind::Identifier(id));
 
         Ok(())
     }
