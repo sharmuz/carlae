@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use std::sync::LazyLock;
+
 use crate::error::CarlaeError;
 use crate::token::{Token, TokenKind};
 
@@ -108,10 +111,12 @@ impl Scanner {
     }
 
     fn advance(&mut self) -> Result<char, CarlaeError> {
-        let ch = self.peek().ok_or_else(|| CarlaeError::Scanning(format!(
-            "[Line {}] Reached end of file unexpectedly",
-            self.line
-        )))?;
+        let ch = self.peek().ok_or_else(|| {
+            CarlaeError::Scanning(format!(
+                "[Line {}] Reached end of file unexpectedly",
+                self.line
+            ))
+        })?;
         self.current += 1;
 
         Ok(ch)
@@ -165,7 +170,9 @@ impl Scanner {
 
     // TODO: Handle escaped strings
     fn string(&mut self) -> Result<(), CarlaeError> {
-        while let Some(ch) = self.peek() && ch != '"' {
+        while let Some(ch) = self.peek()
+            && ch != '"'
+        {
             self.advance()?;
         }
         self.advance()?;
@@ -177,11 +184,17 @@ impl Scanner {
     }
 
     fn identifier(&mut self) -> Result<(), CarlaeError> {
-        while let Some(ch) = self.peek() && (ch.is_alphanumeric() || ch == '_')  {
+        while let Some(ch) = self.peek()
+            && (ch.is_alphanumeric() || ch == '_')
+        {
             self.advance()?;
         }
         let id = self.source_substring().collect();
-        self.add_token(TokenKind::Identifier(id));
+        let kind = match KEYWORDS.get(&id) {
+            Some(kind) => kind.clone(),
+            None => TokenKind::Identifier(id),
+        };
+        self.add_token(kind);
 
         Ok(())
     }
@@ -195,3 +208,19 @@ impl Scanner {
         self.source.chars().take(self.current).skip(self.start)
     }
 }
+
+static KEYWORDS: LazyLock<HashMap<String, TokenKind>> = LazyLock::new(|| {
+    HashMap::from([
+        (String::from("if"), TokenKind::If),
+        (String::from("else"), TokenKind::Else),
+        (String::from("while"), TokenKind::While),
+        (String::from("def"), TokenKind::Def),
+        (String::from("return"), TokenKind::Return),
+        (String::from("True"), TokenKind::True),
+        (String::from("False"), TokenKind::False),
+        (String::from("None"), TokenKind::None),
+        (String::from("and"), TokenKind::And),
+        (String::from("or"), TokenKind::Or),
+        (String::from("not"), TokenKind::Not),
+    ])
+});

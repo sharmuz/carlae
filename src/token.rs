@@ -17,7 +17,7 @@ impl std::fmt::Display for Token {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum TokenKind {
     // One-char tokens
     LeftParen,
