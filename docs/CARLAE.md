@@ -17,7 +17,7 @@ This document describes the Carlae programming language, which is a minimal, Pyt
 - Negation op -
 - Comparison ops < > <= >=
 - Equality == !=
-- Logical ops and or not !
+- Logical ops and or not
 - Parentheses ()
 
 ## Statements

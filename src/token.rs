@@ -30,7 +30,6 @@ pub enum TokenKind {
     // Two-char tokens
     Equal,
     EqualEqual,
-    Bang,
     BangEqual,
     Greater,
     GreaterEqual,

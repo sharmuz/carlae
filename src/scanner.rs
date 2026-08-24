@@ -52,12 +52,9 @@ impl Scanner {
                 self.add_token(kind);
             }
             '!' => {
-                let kind = if self.matches_current('=') {
-                    TokenKind::BangEqual
-                } else {
-                    TokenKind::Bang
-                };
-                self.add_token(kind);
+                if self.matches_current('=') {
+                    self.add_token(TokenKind::BangEqual);
+                }
             }
             '>' => {
                 let kind = if self.matches_current('=') {
