@@ -10,6 +10,7 @@ pub struct Scanner {
     pub start: usize,
     pub current: usize,
     pub line: usize,
+    open_parens: usize,
 }
 
 impl Scanner {
@@ -20,6 +21,7 @@ impl Scanner {
             start: 0,
             current: 0,
             line: 1,
+            open_parens: 0,
         }
     }
 
@@ -40,8 +42,14 @@ impl Scanner {
         let ch = self.advance()?;
 
         match ch {
-            '(' => self.add_token(TokenKind::LeftParen),
-            ')' => self.add_token(TokenKind::RightParen),
+            '(' => {
+                self.open_parens += 1;
+                self.add_token(TokenKind::LeftParen);
+            }
+            ')' => {
+                self.open_parens -= 1;
+                self.add_token(TokenKind::RightParen);
+            }
             '+' => self.add_token(TokenKind::Plus),
             '-' => self.add_token(TokenKind::Minus),
             '*' => self.add_token(TokenKind::Star),
@@ -81,19 +89,29 @@ impl Scanner {
             '"' => self.string()?,
             s if s.is_alphanumeric() || s == '_' => self.identifier()?,
             '#' => {
-                while let Some(ch) = self.peek() {
-                    if ch != '\n' {
-                        self.advance()?;
-                    } else {
-                        break;
-                    }
+                while let Some(ch) = self.peek()
+                    && !matches!(ch, '\n' | '\r')
+                {
+                    self.advance()?;
                 }
             }
-            x if x.is_whitespace() => {
-                // TODO: Tokenize newline/indent/dedent whitespace
-                if x == '\n' {
-                    self.line += 1;
+            '\n' => {
+                if self.open_parens == 0 {
+                    self.end_logical_line();
                 }
+                self.line += 1;
+            }
+            '\r' => {
+                if let Some('\n') = self.peek() {
+                    self.advance()?;
+                }
+                if self.open_parens == 0 {
+                    self.end_logical_line();
+                }
+                self.line += 1;
+            }
+            x if x.is_whitespace() => {
+                // TODO: Tokenize indent/dedent whitespace
             }
             _ => {
                 return Err(CarlaeError::Scanning(format!(
@@ -197,6 +215,12 @@ impl Scanner {
         self.add_token(kind);
 
         Ok(())
+    }
+
+    fn end_logical_line(&mut self) {
+        let text: String = self.source_substring().collect();
+        self.tokens
+            .push(Token::new(TokenKind::Newline, text, self.line));
     }
 
     fn add_token(&mut self, kind: TokenKind) {

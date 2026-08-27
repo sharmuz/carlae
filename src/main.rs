@@ -22,11 +22,14 @@ fn main() -> Result<(), CarlaeError> {
         // Err(CarlaeError::General("No REPL >:(".into()))
         // TODO: Write and call run_prompt()
 
+        // TODO: Make these unit tests
         // run("( **/ \t=-(*) )==# lalalala +=3 #EOF".to_string())
         // run("(123+ 456.000001)==579 #lol".to_string())
         // run(r#"3 "hello" 2"#.to_string())
         // run(r#"drink = "banana_smoothie""#.to_string())
-        run(r#"x = "apple" if y == "yes" else "orange""#.to_string())
+        // run(r#"x = "apple" if y == "yes" else "orange""#.to_string())
+        // run("x = 1 + 2\ny = 2 + 3\rz = x * y\r\n".to_string())
+        run("x = (\n1 + (\n2 + 3\n)\n* 3\n)\ny = 4".to_string())
     }
 }
 
