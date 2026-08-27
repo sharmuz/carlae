@@ -110,6 +110,24 @@ impl Scanner {
                 }
                 self.line += 1;
             }
+            '\\' => {
+                match (self.peek(), self.peek_next()) {
+                    (Some('\r'), Some('\n')) => {
+                        self.advance()?;
+                        self.advance()?;
+                    }
+                    (Some('\n' | '\r'), _) => {
+                        self.advance()?;
+                    }
+                    _ => {
+                        return Err(CarlaeError::Scanning(format!(
+                            "[Line {}] Unexpected character: {ch}",
+                            self.line
+                        )));
+                    }
+                }
+                self.line += 1;
+            }
             x if x.is_whitespace() => {
                 // TODO: Tokenize indent/dedent whitespace
             }

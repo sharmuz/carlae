@@ -29,7 +29,8 @@ fn main() -> Result<(), CarlaeError> {
         // run(r#"drink = "banana_smoothie""#.to_string())
         // run(r#"x = "apple" if y == "yes" else "orange""#.to_string())
         // run("x = 1 + 2\ny = 2 + 3\rz = x * y\r\n".to_string())
-        run("x = (\n1 + (\n2 + 3\n)\n* 3\n)\ny = 4".to_string())
+        // run("x = (\n1 + (\n2 + 3\n)\n* 3\n)\ny = 4".to_string())
+        run("x = (\n1 + (\\\n2 + 3\n)\n)\ny = 4".to_string())
     }
 }
 
