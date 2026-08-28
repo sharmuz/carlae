@@ -13,6 +13,7 @@ pub struct Scanner {
     open_parens: usize,
     indent_stack: Vec<usize>,
     indent_char: Option<char>,
+    blank_line: bool,
 }
 
 impl Scanner {
@@ -26,6 +27,7 @@ impl Scanner {
             open_parens: 0,
             indent_stack: vec![0],
             indent_char: None,
+            blank_line: true,
         }
     }
 
@@ -40,6 +42,10 @@ impl Scanner {
             self.scan_one_token()?;
         }
 
+        if !self.blank_line {
+            self.tokens
+                .push(Token::new(TokenKind::Newline, "\n".to_string(), self.line));
+        }
         while self
             .indent_stack
             .pop()
@@ -114,7 +120,9 @@ impl Scanner {
             }
             '\n' => {
                 if self.open_parens == 0 {
-                    self.end_logical_line();
+                    if !self.blank_line {
+                        self.end_logical_line();
+                    }
                     self.line += 1;
                     self.start += 1;
                     self.indent_dedent()?;
@@ -129,7 +137,9 @@ impl Scanner {
                     start_offset += 1;
                 }
                 if self.open_parens == 0 {
-                    self.end_logical_line();
+                    if !self.blank_line {
+                        self.end_logical_line();
+                    }
                     self.line += 1;
                     self.start += start_offset;
                     self.indent_dedent()?;
@@ -263,9 +273,8 @@ impl Scanner {
     }
 
     fn end_logical_line(&mut self) {
-        let text: String = self.source_substring().collect();
-        self.tokens
-            .push(Token::new(TokenKind::Newline, text, self.line));
+        self.add_token(TokenKind::Newline);
+        self.blank_line = true;
     }
 
     fn indent_dedent(&mut self) -> Result<(), CarlaeError> {
@@ -345,6 +354,7 @@ impl Scanner {
     }
 
     fn add_token(&mut self, kind: TokenKind) {
+        self.blank_line = false;
         let text: String = self.source_substring().collect();
         self.tokens.push(Token::new(kind, text, self.line))
     }
