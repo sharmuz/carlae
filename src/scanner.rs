@@ -11,6 +11,8 @@ pub struct Scanner {
     pub current: usize,
     pub line: usize,
     open_parens: usize,
+    indent_stack: Vec<usize>,
+    indent_char: Option<char>,
 }
 
 impl Scanner {
@@ -22,19 +24,34 @@ impl Scanner {
             current: 0,
             line: 1,
             open_parens: 0,
+            indent_stack: vec![0],
+            indent_char: None,
         }
     }
 
     // TODO: Consider byte-based indexing instead of char-based
     pub fn scan_tokens(&mut self) -> Result<(), CarlaeError> {
+        // Note: Parser will handle initial indent if produced
+        self.indent_dedent()?;
+
         while !self.is_at_end() {
             // We are at the beginning of the next lexeme
             self.start = self.current;
             self.scan_one_token()?;
         }
 
+        while self
+            .indent_stack
+            .pop()
+            .expect("Indent stack should always be non-empty")
+            > 0
+        {
+            self.tokens
+                .push(Token::new(TokenKind::Dedent, "".to_string(), self.line));
+        }
         self.tokens
             .push(Token::new(TokenKind::Eof, "".to_string(), self.line));
+
         Ok(())
     }
 
@@ -98,17 +115,27 @@ impl Scanner {
             '\n' => {
                 if self.open_parens == 0 {
                     self.end_logical_line();
+                    self.line += 1;
+                    self.start += 1;
+                    self.indent_dedent()?;
+                } else {
+                    self.line += 1;
                 }
-                self.line += 1;
             }
             '\r' => {
+                let mut start_offset = 1;
                 if let Some('\n') = self.peek() {
                     self.advance()?;
+                    start_offset += 1;
                 }
                 if self.open_parens == 0 {
                     self.end_logical_line();
+                    self.line += 1;
+                    self.start += start_offset;
+                    self.indent_dedent()?;
+                } else {
+                    self.line += 1;
                 }
-                self.line += 1;
             }
             '\\' => {
                 match (self.peek(), self.peek_next()) {
@@ -239,6 +266,82 @@ impl Scanner {
         let text: String = self.source_substring().collect();
         self.tokens
             .push(Token::new(TokenKind::Newline, text, self.line));
+    }
+
+    fn indent_dedent(&mut self) -> Result<(), CarlaeError> {
+        let mut indent_level: usize = 0;
+        if let Some('\x0C') = self.peek() {
+            self.advance()?;
+        };
+        if self.indent_char.is_none() {
+            self.indent_char = if let Some(' ' | '\t') = self.peek() {
+                self.peek()
+            } else {
+                None
+            };
+        }
+        while let Some(ch) = self.peek()
+            && let Some(id) = self.indent_char
+        {
+            match (ch, id) {
+                (' ', ' ') => {
+                    self.advance()?;
+                    indent_level += 1;
+                }
+                ('\t', '\t') => {
+                    self.advance()?;
+                    indent_level += 8;
+                }
+                (x @ (' ' | '\t'), y) if x != y => {
+                    return Err(CarlaeError::Scanning(format!(
+                        "[Line {}] Input uses mixture of spaces and tabs for indentation",
+                        self.line
+                    )));
+                }
+                ('\x0C', _) => {
+                    return Err(CarlaeError::Scanning(format!(
+                        "[Line {}] Formfeed char only permitted at start of line",
+                        self.line
+                    )));
+                }
+                // No indent/dedent if line ends without non-whitespace/comment char
+                ('\n' | '\r' | '#', _) => return Ok(()),
+                _ => break,
+            }
+        }
+        // No indent/dedent if EOF
+        if self.is_at_end() {
+            return Ok(());
+        }
+
+        let mut last_indent = self
+            .indent_stack
+            .last()
+            .expect("Indent stack should always be non-empty");
+        if indent_level > *last_indent {
+            self.indent_stack.push(indent_level);
+            let text: String = self.source_substring().collect();
+            self.tokens
+                .push(Token::new(TokenKind::Indent, text, self.line))
+        } else if indent_level < *last_indent {
+            if !self.indent_stack.contains(&indent_level) {
+                return Err(CarlaeError::Scanning(format!(
+                    "[Line {}] Unexpected indentation level",
+                    self.line
+                )));
+            }
+            while indent_level < *last_indent {
+                self.indent_stack.pop();
+                self.tokens
+                    .push(Token::new(TokenKind::Dedent, "".to_string(), self.line));
+                last_indent = self
+                    .indent_stack
+                    .last()
+                    .expect("Indent stack should always be non-empty");
+            }
+        }
+
+        Ok(())
     }
 
     fn add_token(&mut self, kind: TokenKind) {
