@@ -259,6 +259,46 @@ impl Scanner {
     }
 
     fn indent_dedent(&mut self) -> Result<(), CarlaeError> {
+        let Some(indent_level) = self.calc_indent_level()? else {
+            return Ok(());
+        };
+
+        // No indent/dedent if EOF
+        if self.is_at_end() {
+            return Ok(());
+        }
+
+        let mut last_indent = self
+            .indent_stack
+            .last()
+            .expect("Indent stack should always be non-empty");
+        if indent_level > *last_indent {
+            self.indent_stack.push(indent_level);
+            let text: String = self.source_substring().collect();
+            self.tokens
+                .push(Token::new(TokenKind::Indent, text, self.line))
+        } else if indent_level < *last_indent {
+            if !self.indent_stack.contains(&indent_level) {
+                return Err(CarlaeError::Scanning(format!(
+                    "[Line {}] Unexpected indentation level",
+                    self.line
+                )));
+            }
+            while indent_level < *last_indent {
+                self.indent_stack.pop();
+                self.tokens
+                    .push(Token::new(TokenKind::Dedent, "".to_string(), self.line));
+                last_indent = self
+                    .indent_stack
+                    .last()
+                    .expect("Indent stack should always be non-empty");
+            }
+        }
+
+        Ok(())
+    }
+
+    fn calc_indent_level(&mut self) -> Result<Option<usize>, CarlaeError> {
         let mut indent_level: usize = 0;
         if let Some('\x0C') = self.peek() {
             self.advance()?;
@@ -295,43 +335,12 @@ impl Scanner {
                     )));
                 }
                 // No indent/dedent if line ends without non-whitespace/comment char
-                ('\n' | '\r' | '#', _) => return Ok(()),
+                ('\n' | '\r' | '#', _) => return Ok(None),
                 _ => break,
             }
         }
-        // No indent/dedent if EOF
-        if self.is_at_end() {
-            return Ok(());
-        }
 
-        let mut last_indent = self
-            .indent_stack
-            .last()
-            .expect("Indent stack should always be non-empty");
-        if indent_level > *last_indent {
-            self.indent_stack.push(indent_level);
-            let text: String = self.source_substring().collect();
-            self.tokens
-                .push(Token::new(TokenKind::Indent, text, self.line))
-        } else if indent_level < *last_indent {
-            if !self.indent_stack.contains(&indent_level) {
-                return Err(CarlaeError::Scanning(format!(
-                    "[Line {}] Unexpected indentation level",
-                    self.line
-                )));
-            }
-            while indent_level < *last_indent {
-                self.indent_stack.pop();
-                self.tokens
-                    .push(Token::new(TokenKind::Dedent, "".to_string(), self.line));
-                last_indent = self
-                    .indent_stack
-                    .last()
-                    .expect("Indent stack should always be non-empty");
-            }
-        }
-
-        Ok(())
+        Ok(Some(indent_level))
     }
 
     fn end_of_input(&mut self) {
