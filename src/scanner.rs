@@ -542,4 +542,66 @@ mod tests {
 
         assert_eq!(scanner.tokens, expected);
     }
+
+    #[test]
+    fn rejects_unexpected_character() {
+        let source = "1\n.\n2".to_string();
+        let mut scanner = Scanner::new(source);
+        let expected = "line 2";
+
+        let result = scanner.scan_tokens();
+
+        assert!(matches!(
+            result,
+            Err(CarlaeError::Scanning(message))
+                if message.to_lowercase().contains(expected)
+        ));
+    }
+
+    #[test]
+    fn rejects_unterminated_string() {
+        let source = "1\n\"text".to_string();
+        let mut scanner = Scanner::new(source);
+        let expected = "line 2";
+
+        let result = scanner.scan_tokens();
+
+        assert!(matches!(
+            result,
+            Err(CarlaeError::Scanning(message))
+                if message.to_lowercase().contains(expected)
+        ));
+    }
+
+    #[test]
+    fn rejects_invalid_dedent() {
+        let source = "1\n  1\n 1\n2".to_string();
+        let mut scanner = Scanner::new(source);
+        let expected = "line 3";
+
+        let result = scanner.scan_tokens();
+
+        assert!(matches!(
+            result,
+            Err(CarlaeError::Scanning(message))
+                if message.to_lowercase().contains(expected)
+        ));
+    }
+
+    #[test]
+    fn skips_blank_and_comment_only_lines() {
+        let source = "1\n\n# comment\n2".to_string();
+        let mut scanner = Scanner::new(source);
+        let expected = vec![
+            Token::new(TokenKind::Number(1.0), "1".into(), 1),
+            Token::new(TokenKind::Newline, "\n".into(), 1),
+            Token::new(TokenKind::Number(2.0), "2".into(), 4),
+            Token::new(TokenKind::Newline, "\n".into(), 4),
+            Token::new(TokenKind::Eof, "".into(), 4),
+        ];
+
+        scanner.scan_tokens().expect("Tokens generated from source");
+
+        assert_eq!(scanner.tokens, expected);
+    }
 }
