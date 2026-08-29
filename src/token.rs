@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Token {
     kind: TokenKind,
     lexeme: String,

@@ -379,3 +379,167 @@ static KEYWORDS: LazyLock<HashMap<String, TokenKind>> = LazyLock::new(|| {
         (String::from("not"), TokenKind::Not),
     ])
 });
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn scans_basic_op_in_parens() {
+        let source = "(1 + 2)\n".to_string();
+        let mut scanner = Scanner::new(source);
+        let expected = vec![
+            Token::new(TokenKind::LeftParen, "(".into(), 1),
+            Token::new(TokenKind::Number(1.0), "1".into(), 1),
+            Token::new(TokenKind::Plus, "+".into(), 1),
+            Token::new(TokenKind::Number(2.0), "2".into(), 1),
+            Token::new(TokenKind::RightParen, ")".into(), 1),
+            Token::new(TokenKind::Newline, "\n".into(), 1),
+            Token::new(TokenKind::Eof, "".into(), 2),
+        ];
+
+        scanner.scan_tokens().expect("Tokens generated from source");
+
+        assert_eq!(scanner.tokens, expected);
+    }
+
+    #[test]
+    fn scans_basic_string_assignment() {
+        let source = "drink = \"banana_smoothie\"\n".to_string();
+        let mut scanner = Scanner::new(source);
+        let expected = vec![
+            Token::new(TokenKind::Identifier("drink".into()), "drink".into(), 1),
+            Token::new(TokenKind::Equal, "=".into(), 1),
+            Token::new(
+                TokenKind::String("banana_smoothie".into()),
+                "\"banana_smoothie\"".into(),
+                1,
+            ),
+            Token::new(TokenKind::Newline, "\n".into(), 1),
+            Token::new(TokenKind::Eof, "".into(), 2),
+        ];
+
+        scanner.scan_tokens().expect("Tokens generated from source");
+
+        assert_eq!(scanner.tokens, expected);
+    }
+
+    #[test]
+    fn scans_single_line_if_else() {
+        let source = r#"x = "apple" if y == "yes" else "orange""#.to_string();
+        let mut scanner = Scanner::new(source);
+        let expected = vec![
+            Token::new(TokenKind::Identifier("x".into()), "x".into(), 1),
+            Token::new(TokenKind::Equal, "=".into(), 1),
+            Token::new(TokenKind::String("apple".into()), "\"apple\"".into(), 1),
+            Token::new(TokenKind::If, "if".into(), 1),
+            Token::new(TokenKind::Identifier("y".into()), "y".into(), 1),
+            Token::new(TokenKind::EqualEqual, "==".into(), 1),
+            Token::new(TokenKind::String("yes".into()), "\"yes\"".into(), 1),
+            Token::new(TokenKind::Else, "else".into(), 1),
+            Token::new(TokenKind::String("orange".into()), "\"orange\"".into(), 1),
+            Token::new(TokenKind::Newline, "\n".into(), 1),
+            Token::new(TokenKind::Eof, "".into(), 1),
+        ];
+
+        scanner.scan_tokens().expect("Tokens generated from source");
+
+        assert_eq!(scanner.tokens, expected);
+    }
+
+    #[test]
+    fn scans_lines_with_cr_lf() {
+        let source = "x = 1 + 2\ny = 2 + 3\rz = x * y\r\n".to_string();
+        let mut scanner = Scanner::new(source);
+        let expected = vec![
+            Token::new(TokenKind::Identifier("x".into()), "x".into(), 1),
+            Token::new(TokenKind::Equal, "=".into(), 1),
+            Token::new(TokenKind::Number(1.0), "1".into(), 1),
+            Token::new(TokenKind::Plus, "+".into(), 1),
+            Token::new(TokenKind::Number(2.0), "2".into(), 1),
+            Token::new(TokenKind::Newline, "\n".into(), 1),
+            Token::new(TokenKind::Identifier("y".into()), "y".into(), 2),
+            Token::new(TokenKind::Equal, "=".into(), 2),
+            Token::new(TokenKind::Number(2.0), "2".into(), 2),
+            Token::new(TokenKind::Plus, "+".into(), 2),
+            Token::new(TokenKind::Number(3.0), "3".into(), 2),
+            Token::new(TokenKind::Newline, "\r".into(), 2),
+            Token::new(TokenKind::Identifier("z".into()), "z".into(), 3),
+            Token::new(TokenKind::Equal, "=".into(), 3),
+            Token::new(TokenKind::Identifier("x".into()), "x".into(), 3),
+            Token::new(TokenKind::Star, "*".into(), 3),
+            Token::new(TokenKind::Identifier("y".into()), "y".into(), 3),
+            Token::new(TokenKind::Newline, "\r\n".into(), 3),
+            Token::new(TokenKind::Eof, "".into(), 4),
+        ];
+
+        scanner.scan_tokens().expect("Tokens generated from source");
+
+        assert_eq!(scanner.tokens, expected);
+    }
+
+    #[test]
+    fn scans_lines_with_implicit_continuation() {
+        let source = "x = (\n1 + (\\\n2 + 3\n)\n)\ny = 4".to_string();
+        let mut scanner = Scanner::new(source);
+        let expected = vec![
+            Token::new(TokenKind::Identifier("x".into()), "x".into(), 1),
+            Token::new(TokenKind::Equal, "=".into(), 1),
+            Token::new(TokenKind::LeftParen, "(".into(), 1),
+            Token::new(TokenKind::Number(1.0), "1".into(), 2),
+            Token::new(TokenKind::Plus, "+".into(), 2),
+            Token::new(TokenKind::LeftParen, "(".into(), 2),
+            Token::new(TokenKind::Number(2.0), "2".into(), 3),
+            Token::new(TokenKind::Plus, "+".into(), 3),
+            Token::new(TokenKind::Number(3.0), "3".into(), 3),
+            Token::new(TokenKind::RightParen, ")".into(), 4),
+            Token::new(TokenKind::RightParen, ")".into(), 5),
+            Token::new(TokenKind::Newline, "\n".into(), 5),
+            Token::new(TokenKind::Identifier("y".into()), "y".into(), 6),
+            Token::new(TokenKind::Equal, "=".into(), 6),
+            Token::new(TokenKind::Number(4.0), "4".into(), 6),
+            Token::new(TokenKind::Newline, "\n".into(), 6),
+            Token::new(TokenKind::Eof, "".into(), 6),
+        ];
+
+        scanner.scan_tokens().expect("Tokens generated from source");
+
+        assert_eq!(scanner.tokens, expected);
+    }
+
+    #[test]
+    fn scans_lines_with_indent_dedent() {
+        let source = "def func():\n    if True:\n        1\n    else:\n        0".to_string();
+        let mut scanner = Scanner::new(source);
+        let expected = vec![
+            Token::new(TokenKind::Def, "def".into(), 1),
+            Token::new(TokenKind::Identifier("func".into()), "func".into(), 1),
+            Token::new(TokenKind::LeftParen, "(".into(), 1),
+            Token::new(TokenKind::RightParen, ")".into(), 1),
+            Token::new(TokenKind::Colon, ":".into(), 1),
+            Token::new(TokenKind::Newline, "\n".into(), 1),
+            Token::new(TokenKind::Indent, "    ".into(), 2),
+            Token::new(TokenKind::If, "if".into(), 2),
+            Token::new(TokenKind::True, "True".into(), 2),
+            Token::new(TokenKind::Colon, ":".into(), 2),
+            Token::new(TokenKind::Newline, "\n".into(), 2),
+            Token::new(TokenKind::Indent, "        ".into(), 3),
+            Token::new(TokenKind::Number(1.0), "1".into(), 3),
+            Token::new(TokenKind::Newline, "\n".into(), 3),
+            Token::new(TokenKind::Dedent, "".into(), 4),
+            Token::new(TokenKind::Else, "else".into(), 4),
+            Token::new(TokenKind::Colon, ":".into(), 4),
+            Token::new(TokenKind::Newline, "\n".into(), 4),
+            Token::new(TokenKind::Indent, "        ".into(), 5),
+            Token::new(TokenKind::Number(0.0), "0".into(), 5),
+            Token::new(TokenKind::Newline, "\n".into(), 5),
+            Token::new(TokenKind::Dedent, "".into(), 5),
+            Token::new(TokenKind::Dedent, "".into(), 5),
+            Token::new(TokenKind::Eof, "".into(), 5),
+        ];
+
+        scanner.scan_tokens().expect("Tokens generated from source");
+
+        assert_eq!(scanner.tokens, expected);
+    }
+}
