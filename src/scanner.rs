@@ -33,7 +33,7 @@ impl Scanner {
 
     // TODO: Consider byte-based indexing instead of char-based
     pub fn scan_tokens(&mut self) -> Result<(), CarlaeError> {
-        // Note: Parser will handle initial indent if produced
+        // Note: Parser will handle initial (invalid) indent if produced
         self.indent_dedent()?;
 
         while !self.is_at_end() {
@@ -42,21 +42,7 @@ impl Scanner {
             self.scan_one_token()?;
         }
 
-        if !self.blank_line {
-            self.tokens
-                .push(Token::new(TokenKind::Newline, "\n".to_string(), self.line));
-        }
-        while self
-            .indent_stack
-            .pop()
-            .expect("Indent stack should always be non-empty")
-            > 0
-        {
-            self.tokens
-                .push(Token::new(TokenKind::Dedent, "".to_string(), self.line));
-        }
-        self.tokens
-            .push(Token::new(TokenKind::Eof, "".to_string(), self.line));
+        self.end_of_input();
 
         Ok(())
     }
@@ -118,34 +104,14 @@ impl Scanner {
                     self.advance()?;
                 }
             }
-            '\n' => {
-                if self.open_parens == 0 {
-                    if !self.blank_line {
-                        self.end_logical_line();
-                    }
-                    self.line += 1;
-                    self.start += 1;
-                    self.indent_dedent()?;
-                } else {
-                    self.line += 1;
-                }
-            }
+            '\n' => self.end_physical_line(1)?,
             '\r' => {
                 let mut start_offset = 1;
                 if let Some('\n') = self.peek() {
                     self.advance()?;
                     start_offset += 1;
                 }
-                if self.open_parens == 0 {
-                    if !self.blank_line {
-                        self.end_logical_line();
-                    }
-                    self.line += 1;
-                    self.start += start_offset;
-                    self.indent_dedent()?;
-                } else {
-                    self.line += 1;
-                }
+                self.end_physical_line(start_offset)?
             }
             '\\' => {
                 match (self.peek(), self.peek_next()) {
@@ -166,7 +132,7 @@ impl Scanner {
                 self.line += 1;
             }
             x if x.is_whitespace() => {
-                // TODO: Tokenize indent/dedent whitespace
+                // Remaining whitespace can be skipped
             }
             _ => {
                 return Err(CarlaeError::Scanning(format!(
@@ -277,6 +243,21 @@ impl Scanner {
         self.blank_line = true;
     }
 
+    fn end_physical_line(&mut self, start_offset: usize) -> Result<(), CarlaeError> {
+        if self.open_parens == 0 {
+            if !self.blank_line {
+                self.end_logical_line();
+            }
+            self.line += 1;
+            self.start += start_offset;
+            self.indent_dedent()?;
+        } else {
+            self.line += 1;
+        }
+
+        Ok(())
+    }
+
     fn indent_dedent(&mut self) -> Result<(), CarlaeError> {
         let mut indent_level: usize = 0;
         if let Some('\x0C') = self.peek() {
@@ -351,6 +332,24 @@ impl Scanner {
         }
 
         Ok(())
+    }
+
+    fn end_of_input(&mut self) {
+        if !self.blank_line {
+            self.tokens
+                .push(Token::new(TokenKind::Newline, "\n".to_string(), self.line));
+        }
+        while self
+            .indent_stack
+            .pop()
+            .expect("Indent stack should always be non-empty")
+            > 0
+        {
+            self.tokens
+                .push(Token::new(TokenKind::Dedent, "".to_string(), self.line));
+        }
+        self.tokens
+            .push(Token::new(TokenKind::Eof, "".to_string(), self.line));
     }
 
     fn add_token(&mut self, kind: TokenKind) {
