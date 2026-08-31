@@ -1,8 +1,8 @@
 #[derive(Debug, PartialEq)]
 pub struct Token {
-    kind: TokenKind,
-    lexeme: String,
-    line: usize,
+    pub kind: TokenKind,
+    pub lexeme: String,
+    pub line: usize,
 }
 
 impl Token {

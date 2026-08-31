@@ -8,6 +8,7 @@ use crate::error::CarlaeError;
 use crate::scanner::Scanner;
 
 mod error;
+mod expr;
 mod scanner;
 mod token;
 
