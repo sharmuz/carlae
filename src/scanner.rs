@@ -56,7 +56,7 @@ impl Scanner {
                 self.add_token(TokenKind::LeftParen);
             }
             ')' => {
-                self.open_parens -= 1;
+                self.open_parens = self.open_parens.saturating_sub(1);
                 self.add_token(TokenKind::RightParen);
             }
             '+' => self.add_token(TokenKind::Plus),

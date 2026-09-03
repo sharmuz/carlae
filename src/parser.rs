@@ -93,6 +93,6 @@ impl Parser {
     }
 
     fn previous(&self) -> Option<&Token> {
-        self.tokens.get(self.current - 1)
+        self.tokens.get(self.current.saturating_sub(1))
     }
 }
