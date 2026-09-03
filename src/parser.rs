@@ -2,6 +2,8 @@ use crate::error::CarlaeError;
 use crate::expr::Expr;
 use crate::token::{Token, TokenKind};
 
+type ParserRule = fn(&mut Parser) -> Result<Expr, CarlaeError>;
+
 #[derive(Debug, Default)]
 struct Parser {
     tokens: Vec<Token>,
@@ -14,37 +16,32 @@ impl Parser {
     }
 
     fn equality(&mut self) -> Result<Expr, CarlaeError> {
-        let mut expr = self.comparison()?;
-
-        while self.current_matches(&[TokenKind::BangEqual, TokenKind::EqualEqual]) {
-            let operator = if let Some(t) = self.previous() {
-                t.clone()
-            } else {
-                return Err(CarlaeError::Parsing(format!(
-                    "No token found at index {}",
-                    self.current - 1
-                )));
-            };
-            let right = self.comparison()?;
-            expr = Expr::Binary {
-                left: Box::new(expr),
-                operator,
-                right: Box::new(right),
-            };
-        }
-
-        Ok(expr)
+        self.parse_binary_operator(
+            Self::comparison,
+            &[TokenKind::BangEqual, TokenKind::EqualEqual],
+        )
     }
 
     fn comparison(&mut self) -> Result<Expr, CarlaeError> {
-        let mut expr = self.term()?;
+        self.parse_binary_operator(
+            Self::term,
+            &[
+                TokenKind::Greater,
+                TokenKind::GreaterEqual,
+                TokenKind::Less,
+                TokenKind::LessEqual,
+            ],
+        )
+    }
 
-        while self.current_matches(&[
-            TokenKind::Greater,
-            TokenKind::GreaterEqual,
-            TokenKind::Less,
-            TokenKind::LessEqual,
-        ]) {
+    fn parse_binary_operator(
+        &mut self,
+        operand_rule: ParserRule,
+        operators: &[TokenKind],
+    ) -> Result<Expr, CarlaeError> {
+        let mut expr = operand_rule(self)?;
+
+        while self.current_matches(operators) {
             let operator = if let Some(t) = self.previous() {
                 t.clone()
             } else {
@@ -53,7 +50,7 @@ impl Parser {
                     self.current - 1
                 )));
             };
-            let right = self.term()?;
+            let right = operand_rule(self)?;
             expr = Expr::Binary {
                 left: Box::new(expr),
                 operator,
