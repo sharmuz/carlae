@@ -9,6 +9,7 @@ use crate::scanner::Scanner;
 
 mod error;
 mod expr;
+mod parser;
 mod scanner;
 mod token;
 

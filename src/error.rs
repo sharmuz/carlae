@@ -4,6 +4,7 @@ use std::error::Error;
 pub enum CarlaeError {
     General(String),
     Io(std::io::Error),
+    Parsing(String),
     Scanning(String),
 }
 
@@ -12,6 +13,7 @@ impl std::fmt::Display for CarlaeError {
         match self {
             Self::General(s) => write!(f, "{s}"),
             Self::Io(e) => write!(f, "{e}"),
+            Self::Parsing(s) => write!(f, "{s}"),
             Self::Scanning(s) => write!(f, "{s}"),
         }
     }
