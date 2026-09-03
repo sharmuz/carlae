@@ -14,7 +14,26 @@ impl Parser {
     }
 
     fn equality(&mut self) -> Result<Expr, CarlaeError> {
-        todo!()
+        let mut expr = self.comparison()?;
+
+        while self.current_matches(&[TokenKind::BangEqual, TokenKind::EqualEqual]) {
+            let operator = if let Some(t) = self.previous() {
+                t.clone()
+            } else {
+                return Err(CarlaeError::Parsing(format!(
+                    "No token found at index {}",
+                    self.current - 1
+                )));
+            };
+            let right = self.comparison()?;
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            };
+        }
+
+        Ok(expr)
     }
 
     fn comparison(&self) -> Result<Expr, CarlaeError> {
