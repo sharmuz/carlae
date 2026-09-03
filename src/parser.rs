@@ -36,7 +36,35 @@ impl Parser {
         Ok(expr)
     }
 
-    fn comparison(&self) -> Result<Expr, CarlaeError> {
+    fn comparison(&mut self) -> Result<Expr, CarlaeError> {
+        let mut expr = self.term()?;
+
+        while self.current_matches(&[
+            TokenKind::Greater,
+            TokenKind::GreaterEqual,
+            TokenKind::Less,
+            TokenKind::LessEqual,
+        ]) {
+            let operator = if let Some(t) = self.previous() {
+                t.clone()
+            } else {
+                return Err(CarlaeError::Parsing(format!(
+                    "No token found at index {}",
+                    self.current - 1
+                )));
+            };
+            let right = self.term()?;
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            };
+        }
+
+        Ok(expr)
+    }
+
+    fn term(&mut self) -> Result<Expr, CarlaeError> {
         todo!()
     }
 
