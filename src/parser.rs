@@ -34,6 +34,14 @@ impl Parser {
         )
     }
 
+    fn term(&mut self) -> Result<Expr, CarlaeError> {
+        self.parse_binary_operator(Self::factor, &[TokenKind::Minus, TokenKind::Plus])
+    }
+
+    fn factor(&mut self) -> Result<Expr, CarlaeError> {
+        self.parse_binary_operator(Self::unary, &[TokenKind::Slash, TokenKind::Star])
+    }
+
     fn parse_binary_operator(
         &mut self,
         operand_rule: ParserRule,
@@ -61,7 +69,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn term(&mut self) -> Result<Expr, CarlaeError> {
+    fn unary(&mut self) -> Result<Expr, CarlaeError> {
         todo!()
     }
 
