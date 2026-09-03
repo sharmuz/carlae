@@ -85,11 +85,11 @@ impl Parser {
     }
 
     fn is_at_end(&self) -> bool {
-        self.peek().is_some_and(|t| t.kind != TokenKind::Eof)
+        self.peek().is_some_and(|t| t.kind == TokenKind::Eof)
     }
 
     fn peek(&self) -> Option<&Token> {
-        self.tokens.get(self.current - 1)
+        self.tokens.get(self.current)
     }
 
     fn previous(&self) -> Option<&Token> {
