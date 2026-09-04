@@ -76,6 +76,11 @@ impl Scanner {
             '!' => {
                 if self.matches_current('=') {
                     self.add_token(TokenKind::BangEqual);
+                } else {
+                    return Err(CarlaeError::Scanning(format!(
+                        "[Line {}] Unexpected character: {ch}",
+                        self.line
+                    )));
                 }
             }
             '>' => {
