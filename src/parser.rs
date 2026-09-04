@@ -50,14 +50,9 @@ impl Parser {
         let mut expr = operand_rule(self)?;
 
         while self.current_matches(operators) {
-            let operator = if let Some(t) = self.previous() {
-                t.clone()
-            } else {
-                return Err(CarlaeError::Parsing(format!(
-                    "No token found at index {}",
-                    self.current - 1
-                )));
-            };
+            let operator = self.previous().cloned().ok_or_else(|| {
+                CarlaeError::Parsing(format!("No token found at index {}", self.current - 1))
+            })?;
             let right = operand_rule(self)?;
             expr = Expr::Binary {
                 left: Box::new(expr),
@@ -70,6 +65,23 @@ impl Parser {
     }
 
     fn unary(&mut self) -> Result<Expr, CarlaeError> {
+        let expr = if self.current_matches(&[TokenKind::Minus]) {
+            let operator = self.previous().cloned().ok_or_else(|| {
+                CarlaeError::Parsing(format!("No token found at index {}", self.current - 1))
+            })?;
+            let right = self.unary()?;
+            Expr::Unary {
+                operator,
+                right: Box::new(right),
+            }
+        } else {
+            self.primary()?
+        };
+
+        Ok(expr)
+    }
+
+    fn primary(&mut self) -> Result<Expr, CarlaeError> {
         todo!()
     }
 
