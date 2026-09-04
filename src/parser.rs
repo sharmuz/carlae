@@ -1,5 +1,5 @@
 use crate::error::CarlaeError;
-use crate::expr::Expr;
+use crate::expr::{Expr, LiteralValue};
 use crate::token::{Token, TokenKind};
 
 type ParserRule = fn(&mut Parser) -> Result<Expr, CarlaeError>;
@@ -82,11 +82,51 @@ impl Parser {
     }
 
     fn primary(&mut self) -> Result<Expr, CarlaeError> {
-        todo!()
+        if let Some(t) = self.peek() {
+            let val = match &t.kind {
+                TokenKind::Number(n) => Expr::Literal(LiteralValue::Number(*n)),
+                TokenKind::String(s) => Expr::Literal(LiteralValue::String(s.clone())),
+                TokenKind::True => Expr::Literal(LiteralValue::Boolean(true)),
+                TokenKind::False => Expr::Literal(LiteralValue::Boolean(false)),
+                TokenKind::None => Expr::Literal(LiteralValue::None),
+                TokenKind::LeftParen => {
+                    self.advance();
+                    return self.grouping();
+                }
+                t => {
+                    return Err(CarlaeError::Parsing(format!(
+                        "Invalid token {t:?} found at index {}",
+                        self.current
+                    )));
+                }
+            };
+            self.advance();
+            Ok(val)
+        } else {
+            Err(CarlaeError::Parsing(format!(
+                "No token found at index {}",
+                self.current
+            )))
+        }
+    }
+
+    fn grouping(&mut self) -> Result<Expr, CarlaeError> {
+        let expr = self.expression()?;
+        if self.peek().is_some_and(|t| t.kind == TokenKind::RightParen) {
+            self.advance();
+            Ok(Expr::Grouping(Box::new(expr)))
+        } else {
+            let prev = self.previous().expect("Previously parsed token");
+            Err(CarlaeError::Parsing(format!(
+                "Missing `)` after {:?} on line {}",
+                prev.kind, prev.line
+            )))
+        }
     }
 
     fn current_matches(&mut self, kinds: &[TokenKind]) -> bool {
         let found = kinds.iter().any(|t| self.check(t));
+        // TODO: Keep side effect here?
         if found {
             self.advance();
         }
@@ -94,6 +134,7 @@ impl Parser {
     }
 
     fn check(&self, kind: &TokenKind) -> bool {
+        // TODO: Confirm if first part or even method at all is necessary
         !self.is_at_end() && self.peek().is_some_and(|t| t.kind == *kind)
     }
 
@@ -101,7 +142,7 @@ impl Parser {
         if !self.is_at_end() {
             self.current += 1;
         };
-        self.previous()
+        self.previous() // TODO: Confirm if necessary
     }
 
     fn is_at_end(&self) -> bool {
