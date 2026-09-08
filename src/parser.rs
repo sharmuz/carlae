@@ -4,7 +4,6 @@ use crate::token::{Token, TokenKind};
 
 type ParserRule = fn(&mut Parser) -> Result<Expr, CarlaeError>;
 
-#[derive(Debug, Default)]
 struct Parser {
     tokens: Vec<Token>,
     current: usize,
@@ -50,9 +49,8 @@ impl Parser {
         let mut expr = operand_rule(self)?;
 
         while self.current_matches(operators) {
-            let operator = self.previous().cloned().ok_or_else(|| {
-                CarlaeError::Parsing(format!("No token found at index {}", self.current - 1))
-            })?;
+            self.advance();
+            let operator = self.previous().clone();
             let right = operand_rule(self)?;
             expr = Expr::Binary {
                 left: Box::new(expr),
@@ -66,9 +64,8 @@ impl Parser {
 
     fn unary(&mut self) -> Result<Expr, CarlaeError> {
         let expr = if self.current_matches(&[TokenKind::Minus]) {
-            let operator = self.previous().cloned().ok_or_else(|| {
-                CarlaeError::Parsing(format!("No token found at index {}", self.current - 1))
-            })?;
+            self.advance();
+            let operator = self.previous().clone();
             let right = self.unary()?;
             Expr::Unary {
                 operator,
@@ -116,7 +113,7 @@ impl Parser {
             self.advance();
             Ok(Expr::Grouping(Box::new(expr)))
         } else {
-            let prev = self.previous().expect("Previously parsed token");
+            let prev = self.previous();
             Err(CarlaeError::Parsing(format!(
                 "Missing `)` after {:?} on line {}",
                 prev.kind, prev.line
@@ -124,36 +121,28 @@ impl Parser {
         }
     }
 
-    fn current_matches(&mut self, kinds: &[TokenKind]) -> bool {
-        let found = kinds.iter().any(|t| self.check(t));
-        // TODO: Keep side effect here?
-        if found {
-            self.advance();
-        }
-        found
+    fn current_matches(&self, kinds: &[TokenKind]) -> bool {
+        self.peek().is_some_and(|t| kinds.contains(&t.kind))
     }
 
-    fn check(&self, kind: &TokenKind) -> bool {
-        // TODO: Confirm if first part or even method at all is necessary
-        !self.is_at_end() && self.peek().is_some_and(|t| t.kind == *kind)
-    }
-
-    fn advance(&mut self) -> Option<&Token> {
+    fn advance(&mut self) {
         if !self.is_at_end() {
             self.current += 1;
         };
-        self.previous() // TODO: Confirm if necessary
     }
 
     fn is_at_end(&self) -> bool {
-        self.peek().is_some_and(|t| t.kind == TokenKind::Eof)
+        self.peek().expect("Token stream ends with EOF").kind == TokenKind::Eof
     }
 
     fn peek(&self) -> Option<&Token> {
         self.tokens.get(self.current)
     }
 
-    fn previous(&self) -> Option<&Token> {
-        self.tokens.get(self.current.saturating_sub(1))
+    fn previous(&self) -> &Token {
+        self.current
+            .checked_sub(1)
+            .and_then(|i| self.tokens.get(i))
+            .expect("Previous token exists")
     }
 }
