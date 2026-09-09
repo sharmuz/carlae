@@ -5,6 +5,7 @@ use std::{
 };
 
 use crate::error::CarlaeError;
+use crate::parser::Parser;
 use crate::scanner::Scanner;
 
 mod error;
@@ -42,10 +43,13 @@ fn run_file(path: impl AsRef<Path>) -> Result<(), CarlaeError> {
 fn run(source: String) -> Result<(), CarlaeError> {
     let mut scanner = Scanner::new(source);
     scanner.scan_tokens()?;
-
     for t in scanner.tokens.iter() {
         println!("{t:?}")
     }
+
+    let mut parser = Parser::new(scanner.tokens);
+    let expr = parser.expression()?;
+    println!("{expr}");
 
     Ok(())
 }

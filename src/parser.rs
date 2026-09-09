@@ -4,17 +4,17 @@ use crate::token::{Token, TokenKind};
 
 type ParserRule = fn(&mut Parser) -> Result<Expr, CarlaeError>;
 
-struct Parser {
+pub struct Parser {
     tokens: Vec<Token>,
     current: usize,
 }
 
 impl Parser {
-    fn new(tokens: Vec<Token>) -> Self {
+    pub fn new(tokens: Vec<Token>) -> Self {
         Self { tokens, current: 0 }
     }
 
-    fn expression(&mut self) -> Result<Expr, CarlaeError> {
+    pub fn expression(&mut self) -> Result<Expr, CarlaeError> {
         self.equality()
     }
 
