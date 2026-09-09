@@ -1,5 +1,6 @@
 use crate::token::Token;
 
+#[derive(Debug, PartialEq)]
 pub enum Expr {
     Literal(LiteralValue),
     Unary {
@@ -29,6 +30,7 @@ impl std::fmt::Display for Expr {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum LiteralValue {
     Number(f64),
     Boolean(bool),

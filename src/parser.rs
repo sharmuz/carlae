@@ -10,6 +10,10 @@ struct Parser {
 }
 
 impl Parser {
+    fn new(tokens: Vec<Token>) -> Self {
+        Self { tokens, current: 0 }
+    }
+
     fn expression(&mut self) -> Result<Expr, CarlaeError> {
         self.equality()
     }
@@ -144,5 +148,32 @@ impl Parser {
             .checked_sub(1)
             .and_then(|i| self.tokens.get(i))
             .expect("Previous token exists")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_basic_binary_op() {
+        let mut parser = Parser::new(vec![
+            Token::new(TokenKind::LeftParen, "(".into(), 1),
+            Token::new(TokenKind::Number(1.0), "1".into(), 1),
+            Token::new(TokenKind::Plus, "+".into(), 1),
+            Token::new(TokenKind::Number(2.0), "2".into(), 1),
+            Token::new(TokenKind::RightParen, ")".into(), 1),
+            Token::new(TokenKind::Newline, "\n".into(), 1),
+            Token::new(TokenKind::Eof, "".into(), 2),
+        ]);
+        let expected = Expr::Grouping(Box::new(Expr::Binary {
+            left: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
+            operator: Token::new(TokenKind::Plus, "+".into(), 1),
+            right: Box::new(Expr::Literal(LiteralValue::Number(2.0))),
+        }));
+
+        let expr = parser.expression().expect("Tokens successfully parsed into Expr");
+
+        assert_eq!(expr, expected);
     }
 }
