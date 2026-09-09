@@ -48,7 +48,7 @@ fn run(source: String) -> Result<(), CarlaeError> {
     }
 
     let mut parser = Parser::new(scanner.tokens);
-    let expr = parser.expression()?;
+    let expr = parser.parse()?;
     println!("{expr}");
 
     Ok(())

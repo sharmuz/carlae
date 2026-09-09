@@ -14,7 +14,11 @@ impl Parser {
         Self { tokens, current: 0 }
     }
 
-    pub fn expression(&mut self) -> Result<Expr, CarlaeError> {
+    pub fn parse(&mut self) -> Result<Expr, CarlaeError> {
+        self.expression()
+    }
+
+    fn expression(&mut self) -> Result<Expr, CarlaeError> {
         self.equality()
     }
 
@@ -174,7 +178,7 @@ mod tests {
         }));
 
         let expr = parser
-            .expression()
+            .parse()
             .expect("Tokens successfully parsed into Expr");
 
         assert_eq!(expr, expected);
@@ -202,7 +206,7 @@ mod tests {
         };
 
         let expr = parser
-            .expression()
+            .parse()
             .expect("Tokens successfully parsed into Expr");
 
         assert_eq!(expr, expected);
@@ -230,7 +234,7 @@ mod tests {
         };
 
         let expr = parser
-            .expression()
+            .parse()
             .expect("Tokens successfully parsed into Expr");
 
         assert_eq!(expr, expected);
@@ -262,7 +266,7 @@ mod tests {
         };
 
         let expr = parser
-            .expression()
+            .parse()
             .expect("Tokens successfully parsed into Expr");
 
         assert_eq!(expr, expected);
@@ -280,7 +284,7 @@ mod tests {
         ]);
         let expected = "missing `)`";
 
-        let result = parser.expression();
+        let result = parser.parse();
 
         assert!(matches!(
             result,
@@ -297,7 +301,7 @@ mod tests {
         ]);
         let expected = "invalid token";
 
-        let result = parser.expression();
+        let result = parser.parse();
 
         assert!(matches!(
             result,
