@@ -154,6 +154,10 @@ impl Parser {
             .and_then(|i| self.tokens.get(i))
             .expect("Previous token exists")
     }
+
+    fn _synchronize(&mut self) {
+        todo!()
+    }
 }
 
 #[cfg(test)]
