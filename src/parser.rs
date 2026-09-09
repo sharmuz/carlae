@@ -94,19 +94,20 @@ impl Parser {
                     self.advance();
                     return self.grouping();
                 }
-                t => {
+                _ => {
                     return Err(CarlaeError::Parsing(format!(
-                        "Invalid token {t:?} found at index {}",
-                        self.current
+                        "[Line {}] Invalid token {:?}",
+                        t.line, t.kind
                     )));
                 }
             };
             self.advance();
             Ok(val)
         } else {
+            let prev = self.previous();
             Err(CarlaeError::Parsing(format!(
-                "No token found at index {}",
-                self.current
+                "[Line {}] Expected token after {:?}",
+                prev.line, prev.kind
             )))
         }
     }
@@ -119,8 +120,8 @@ impl Parser {
         } else {
             let prev = self.previous();
             Err(CarlaeError::Parsing(format!(
-                "Missing `)` after {:?} on line {}",
-                prev.kind, prev.line
+                "[Line {}] Missing `)` after {:?}",
+                prev.line, prev.kind
             )))
         }
     }
@@ -308,11 +309,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "Token stream ends with EOF")]
     fn panics_if_token_stream_is_missing_eof() {
-        let mut parser = Parser::new(vec![Token::new(
-            TokenKind::Number(1.0),
-            "1".into(),
-            1,
-        )]);
+        let mut parser = Parser::new(vec![Token::new(TokenKind::Number(1.0), "1".into(), 1)]);
 
         parser.advance();
         parser.is_at_end();
