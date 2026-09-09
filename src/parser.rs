@@ -266,4 +266,55 @@ mod tests {
 
         assert_eq!(expr, expected);
     }
+
+    #[test]
+    fn rejects_missing_right_paren() {
+        let mut parser = Parser::new(vec![
+            Token::new(TokenKind::LeftParen, "(".into(), 1),
+            Token::new(TokenKind::Number(1.0), "1".into(), 1),
+            Token::new(TokenKind::Plus, "+".into(), 1),
+            Token::new(TokenKind::Number(2.0), "2".into(), 1),
+            Token::new(TokenKind::Newline, "\n".into(), 1),
+            Token::new(TokenKind::Eof, "".into(), 2),
+        ]);
+        let expected = "missing `)`";
+
+        let result = parser.expression();
+
+        assert!(matches!(
+            result,
+            Err(CarlaeError::Parsing(message))
+            if message.to_lowercase().contains(expected)
+        ));
+    }
+
+    #[test]
+    fn rejects_invalid_token_in_primary() {
+        let mut parser = Parser::new(vec![
+            Token::new(TokenKind::Comma, ",".into(), 1),
+            Token::new(TokenKind::Eof, "".into(), 1),
+        ]);
+        let expected = "invalid token";
+
+        let result = parser.expression();
+
+        assert!(matches!(
+            result,
+            Err(CarlaeError::Parsing(message))
+            if message.to_lowercase().contains(expected)
+        ));
+    }
+
+    #[test]
+    #[should_panic(expected = "Token stream ends with EOF")]
+    fn panics_if_token_stream_is_missing_eof() {
+        let mut parser = Parser::new(vec![Token::new(
+            TokenKind::Number(1.0),
+            "1".into(),
+            1,
+        )]);
+
+        parser.advance();
+        parser.is_at_end();
+    }
 }
