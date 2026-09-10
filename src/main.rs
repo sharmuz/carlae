@@ -10,6 +10,7 @@ use crate::scanner::Scanner;
 
 mod error;
 mod expr;
+mod eval;
 mod parser;
 mod scanner;
 mod token;

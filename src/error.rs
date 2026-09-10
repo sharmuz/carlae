@@ -2,6 +2,7 @@ use std::error::Error;
 
 #[derive(Debug)]
 pub enum CarlaeError {
+    Evaluation(String),
     General(String),
     Io(std::io::Error),
     Parsing(String),
@@ -11,6 +12,7 @@ pub enum CarlaeError {
 impl std::fmt::Display for CarlaeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Evaluation(s) => write!(f, "{s}"),
             Self::General(s) => write!(f, "{s}"),
             Self::Io(e) => write!(f, "{e}"),
             Self::Parsing(s) => write!(f, "{s}"),

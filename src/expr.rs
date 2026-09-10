@@ -30,7 +30,7 @@ impl std::fmt::Display for Expr {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum LiteralValue {
     Number(f64),
     Boolean(bool),
