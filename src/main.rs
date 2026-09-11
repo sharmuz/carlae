@@ -52,5 +52,8 @@ fn run(source: String) -> Result<(), CarlaeError> {
     let expr = parser.parse()?;
     println!("{expr}");
 
+    let eval = expr.evaluate()?;
+    println!("{eval}");
+
     Ok(())
 }
