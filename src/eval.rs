@@ -63,9 +63,101 @@ impl Expr {
                     operator.line
                 ))),
             },
-            TokenKind::Minus => todo!(),
-            TokenKind::Star => todo!(),
-            TokenKind::Slash => todo!(),
+            TokenKind::Minus => match (left, right) {
+                (LiteralValue::Number(x), LiteralValue::Number(y)) => {
+                    Ok(LiteralValue::Number(x - y))
+                }
+                (LiteralValue::Number(x), b @ LiteralValue::Boolean(_)) => {
+                    Ok(LiteralValue::Number(x - b.as_number()?))
+                }
+                (b @ LiteralValue::Boolean(_), LiteralValue::Number(x)) => {
+                    Ok(LiteralValue::Number(b.as_number()? - x))
+                }
+                (b @ LiteralValue::Boolean(_), c @ LiteralValue::Boolean(_)) => {
+                    Ok(LiteralValue::Number(b.as_number()? - c.as_number()?))
+                }
+                (x, y) => Err(CarlaeError::Evaluation(format!(
+                    "[Line {}]: Invalid arguments to binary operator -: {x}, {y}",
+                    operator.line
+                ))),
+            },
+            TokenKind::Star => match (left, right) {
+                (LiteralValue::Number(x), LiteralValue::Number(y)) => {
+                    Ok(LiteralValue::Number(x * y))
+                }
+                (LiteralValue::Number(x), b @ LiteralValue::Boolean(_))
+                | (b @ LiteralValue::Boolean(_), LiteralValue::Number(x)) => {
+                    Ok(LiteralValue::Number(x * b.as_number()?))
+                }
+                (b @ LiteralValue::Boolean(_), c @ LiteralValue::Boolean(_)) => {
+                    Ok(LiteralValue::Number(b.as_number()? * c.as_number()?))
+                }
+                (LiteralValue::String(s), LiteralValue::Number(n))
+                | (LiteralValue::Number(n), LiteralValue::String(s)) => {
+                    if n.fract() == 0.0 {
+                        Ok(LiteralValue::String(s.repeat(n as usize)))
+                    } else {
+                        Err(CarlaeError::Evaluation(format!(
+                            "[Line {}]: Can't multiply strings by fractional numbers",
+                            operator.line
+                        )))
+                    }
+                }
+                (LiteralValue::String(s), b @ LiteralValue::Boolean(_))
+                | (b @ LiteralValue::Boolean(_), LiteralValue::String(s)) => {
+                    Ok(LiteralValue::String(s.repeat(b.as_number()? as usize)))
+                }
+                (x, y) => Err(CarlaeError::Evaluation(format!(
+                    "[Line {}]: Invalid arguments to binary operator *: {x}, {y}",
+                    operator.line
+                ))),
+            },
+            TokenKind::Slash => match (left, right) {
+                (LiteralValue::Number(x), LiteralValue::Number(y)) => {
+                    if y == 0.0 {
+                        Err(CarlaeError::Evaluation(format!(
+                            "[Line {}]: Cannot divide by zero",
+                            operator.line
+                        )))
+                    } else {
+                        Ok(LiteralValue::Number(x / y))
+                    }
+                }
+                (LiteralValue::Number(x), b @ LiteralValue::Boolean(p)) => {
+                    if !p {
+                        Err(CarlaeError::Evaluation(format!(
+                            "[Line {}]: Cannot divide by {b} == zero",
+                            operator.line
+                        )))
+                    } else {
+                        Ok(LiteralValue::Number(x / b.as_number()?))
+                    }
+                }
+                (b @ LiteralValue::Boolean(_), LiteralValue::Number(x)) => {
+                    if x == 0.0 {
+                        Err(CarlaeError::Evaluation(format!(
+                            "[Line {}]: Cannot divide by zero",
+                            operator.line
+                        )))
+                    } else {
+                        Ok(LiteralValue::Number(b.as_number()? / x))
+                    }
+                }
+                (b @ LiteralValue::Boolean(_), c @ LiteralValue::Boolean(p)) => {
+                    if !p {
+                        Err(CarlaeError::Evaluation(format!(
+                            "[Line {}]: Cannot divide by {c} == zero",
+                            operator.line
+                        )))
+                    } else {
+                        Ok(LiteralValue::Number(b.as_number()? / c.as_number()?))
+                    }
+                }
+                (x, y) => Err(CarlaeError::Evaluation(format!(
+                    "[Line {}]: Invalid arguments to binary operator /: {x}, {y}",
+                    operator.line
+                ))),
+            },
             k => Err(CarlaeError::Evaluation(format!(
                 "[Line {}]: Invalid binary operator: {k:?}",
                 operator.line
