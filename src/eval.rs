@@ -158,6 +158,104 @@ impl Expr {
                     operator.line
                 ))),
             },
+            TokenKind::EqualEqual => match (left, right) {
+                (LiteralValue::Number(n), b @ LiteralValue::Boolean(_))
+                | (b @ LiteralValue::Boolean(_), LiteralValue::Number(n)) => {
+                    Ok(LiteralValue::Boolean(n == b.as_number()?))
+                }
+                (x, y) => Ok(LiteralValue::Boolean(x == y)),
+            },
+            TokenKind::BangEqual => match (left, right) {
+                (LiteralValue::Number(n), b @ LiteralValue::Boolean(_))
+                | (b @ LiteralValue::Boolean(_), LiteralValue::Number(n)) => {
+                    Ok(LiteralValue::Boolean(n != b.as_number()?))
+                }
+                (x, y) => Ok(LiteralValue::Boolean(x != y)),
+            },
+            TokenKind::Greater => match (left, right) {
+                (LiteralValue::Number(x), LiteralValue::Number(y)) => {
+                    Ok(LiteralValue::Boolean(x > y))
+                }
+                (LiteralValue::Number(n), b @ LiteralValue::Boolean(_)) => {
+                    Ok(LiteralValue::Boolean(n > b.as_number()?))
+                }
+                (b @ LiteralValue::Boolean(_), LiteralValue::Number(n)) => {
+                    Ok(LiteralValue::Boolean(b.as_number()? > n))
+                }
+                (b @ LiteralValue::Boolean(_), c @ LiteralValue::Boolean(_)) => {
+                    Ok(LiteralValue::Boolean(b.as_number()? > c.as_number()?))
+                }
+                (LiteralValue::String(s), LiteralValue::String(t)) => {
+                    Ok(LiteralValue::Boolean(s > t))
+                }
+                (x, y) => Err(CarlaeError::Evaluation(format!(
+                    "[Line {}]: Invalid arguments to binary operator >: {x}, {y}",
+                    operator.line
+                ))),
+            },
+            TokenKind::GreaterEqual => match (left, right) {
+                (LiteralValue::Number(x), LiteralValue::Number(y)) => {
+                    Ok(LiteralValue::Boolean(x >= y))
+                }
+                (LiteralValue::Number(n), b @ LiteralValue::Boolean(_)) => {
+                    Ok(LiteralValue::Boolean(n >= b.as_number()?))
+                }
+                (b @ LiteralValue::Boolean(_), LiteralValue::Number(n)) => {
+                    Ok(LiteralValue::Boolean(b.as_number()? >= n))
+                }
+                (b @ LiteralValue::Boolean(_), c @ LiteralValue::Boolean(_)) => {
+                    Ok(LiteralValue::Boolean(b.as_number()? >= c.as_number()?))
+                }
+                (LiteralValue::String(s), LiteralValue::String(t)) => {
+                    Ok(LiteralValue::Boolean(s >= t))
+                }
+                (x, y) => Err(CarlaeError::Evaluation(format!(
+                    "[Line {}]: Invalid arguments to binary operator >=: {x}, {y}",
+                    operator.line
+                ))),
+            },
+            TokenKind::Less => match (left, right) {
+                (LiteralValue::Number(x), LiteralValue::Number(y)) => {
+                    Ok(LiteralValue::Boolean(x < y))
+                }
+                (LiteralValue::Number(n), b @ LiteralValue::Boolean(_)) => {
+                    Ok(LiteralValue::Boolean(n < b.as_number()?))
+                }
+                (b @ LiteralValue::Boolean(_), LiteralValue::Number(n)) => {
+                    Ok(LiteralValue::Boolean(b.as_number()? < n))
+                }
+                (b @ LiteralValue::Boolean(_), c @ LiteralValue::Boolean(_)) => {
+                    Ok(LiteralValue::Boolean(b.as_number()? < c.as_number()?))
+                }
+                (LiteralValue::String(s), LiteralValue::String(t)) => {
+                    Ok(LiteralValue::Boolean(s < t))
+                }
+                (x, y) => Err(CarlaeError::Evaluation(format!(
+                    "[Line {}]: Invalid arguments to binary operator <: {x}, {y}",
+                    operator.line
+                ))),
+            },
+            TokenKind::LessEqual => match (left, right) {
+                (LiteralValue::Number(x), LiteralValue::Number(y)) => {
+                    Ok(LiteralValue::Boolean(x <= y))
+                }
+                (LiteralValue::Number(n), b @ LiteralValue::Boolean(_)) => {
+                    Ok(LiteralValue::Boolean(n <= b.as_number()?))
+                }
+                (b @ LiteralValue::Boolean(_), LiteralValue::Number(n)) => {
+                    Ok(LiteralValue::Boolean(b.as_number()? <= n))
+                }
+                (b @ LiteralValue::Boolean(_), c @ LiteralValue::Boolean(_)) => {
+                    Ok(LiteralValue::Boolean(b.as_number()? <= c.as_number()?))
+                }
+                (LiteralValue::String(s), LiteralValue::String(t)) => {
+                    Ok(LiteralValue::Boolean(s <= t))
+                }
+                (x, y) => Err(CarlaeError::Evaluation(format!(
+                    "[Line {}]: Invalid arguments to binary operator <=: {x}, {y}",
+                    operator.line
+                ))),
+            },
             k => Err(CarlaeError::Evaluation(format!(
                 "[Line {}]: Invalid binary operator: {k:?}",
                 operator.line
@@ -287,6 +385,36 @@ mod tests {
             binary(boolean(false), TokenKind::Star, "*", string("unused")),
         )));
         let expected = LiteralValue::String("CarlaeCarlae!".into());
+
+        let eval = expr.evaluate().expect("Expression is evaluated");
+
+        assert_eq!(eval, expected);
+    }
+
+    #[test]
+    fn evals_equality_between_numbers() {
+        let expr = Expr::Grouping(Box::new(binary(
+            binary(number(1.0), TokenKind::Plus, "+", number(2.0)),
+            TokenKind::EqualEqual,
+            "==",
+            binary(number(6.0), TokenKind::Slash, "/", number(2.0)),
+        )));
+        let expected = LiteralValue::Boolean(true);
+
+        let eval = expr.evaluate().expect("Expression is evaluated");
+
+        assert_eq!(eval, expected);
+    }
+
+    #[test]
+    fn evals_greater_than_between_strings() {
+        let expr = Expr::Grouping(Box::new(binary(
+            string("cat"),
+            TokenKind::Greater,
+            ">",
+            string("car"),
+        )));
+        let expected = LiteralValue::Boolean(true);
 
         let eval = expr.evaluate().expect("Expression is evaluated");
 
