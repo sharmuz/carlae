@@ -178,3 +178,175 @@ impl LiteralValue {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn number(value: f64) -> Expr {
+        Expr::Literal(LiteralValue::Number(value))
+    }
+
+    fn boolean(value: bool) -> Expr {
+        Expr::Literal(LiteralValue::Boolean(value))
+    }
+
+    fn string(value: &str) -> Expr {
+        Expr::Literal(LiteralValue::String(value.into()))
+    }
+
+    fn binary(left: Expr, kind: TokenKind, lexeme: &str, right: Expr) -> Expr {
+        Expr::Binary {
+            left: Box::new(left),
+            operator: Token::new(kind, lexeme.into(), 1),
+            right: Box::new(right),
+        }
+    }
+
+    #[test]
+    fn evals_trivial_arithmetic() {
+        let expr = Expr::Grouping(Box::new(binary(
+            number(1.0),
+            TokenKind::Plus,
+            "+",
+            number(2.0),
+        )));
+        let expected = LiteralValue::Number(3.0);
+
+        let eval = expr.evaluate().expect("Expression is evaluated");
+
+        assert_eq!(eval, expected);
+    }
+
+    #[test]
+    fn evals_number_arithmetic_with_all_binary_ops() {
+        let expr = Expr::Grouping(Box::new(binary(
+            binary(
+                binary(
+                    binary(number(8.0), TokenKind::Plus, "+", number(4.0)),
+                    TokenKind::Star,
+                    "*",
+                    number(3.0),
+                ),
+                TokenKind::Slash,
+                "/",
+                number(2.0),
+            ),
+            TokenKind::Minus,
+            "-",
+            number(5.0),
+        )));
+        let expected = LiteralValue::Number(13.0);
+
+        let eval = expr.evaluate().expect("Expression is evaluated");
+
+        assert_eq!(eval, expected);
+    }
+
+    #[test]
+    fn evals_arithmetic_with_numbers_and_bools() {
+        let expr = Expr::Grouping(Box::new(binary(
+            binary(
+                binary(
+                    binary(number(10.0), TokenKind::Minus, "-", boolean(true)),
+                    TokenKind::Star,
+                    "*",
+                    binary(boolean(false), TokenKind::Plus, "+", number(2.0)),
+                ),
+                TokenKind::Slash,
+                "/",
+                boolean(true),
+            ),
+            TokenKind::Plus,
+            "+",
+            binary(boolean(true), TokenKind::Star, "*", boolean(false)),
+        )));
+        let expected = LiteralValue::Number(18.0);
+
+        let eval = expr.evaluate().expect("Expression is evaluated");
+
+        assert_eq!(eval, expected);
+    }
+
+    #[test]
+    fn evals_string_arithmetic() {
+        let expr = Expr::Grouping(Box::new(binary(
+            binary(
+                binary(
+                    binary(string("Car"), TokenKind::Plus, "+", string("lae")),
+                    TokenKind::Star,
+                    "*",
+                    number(2.0),
+                ),
+                TokenKind::Plus,
+                "+",
+                binary(string("!"), TokenKind::Star, "*", boolean(true)),
+            ),
+            TokenKind::Plus,
+            "+",
+            binary(boolean(false), TokenKind::Star, "*", string("unused")),
+        )));
+        let expected = LiteralValue::String("CarlaeCarlae!".into());
+
+        let eval = expr.evaluate().expect("Expression is evaluated");
+
+        assert_eq!(eval, expected);
+    }
+
+    #[test]
+    fn refuses_divide_by_zero() {
+        let expr = Expr::Grouping(Box::new(binary(
+            number(1.0),
+            TokenKind::Slash,
+            "/",
+            number(0.0),
+        )));
+        let expected = "divide by zero";
+
+        let result = expr.evaluate();
+
+        assert!(matches!(
+            result,
+            Err(CarlaeError::Evaluation(message))
+            if message.to_lowercase().contains(expected)
+        ));
+    }
+
+    #[test]
+    fn refuses_divide_by_false() {
+        let expr = Expr::Grouping(Box::new(binary(
+            number(1.0),
+            TokenKind::Slash,
+            "/",
+            boolean(false),
+        )));
+        let expected = "divide by false";
+
+        let result = expr.evaluate();
+
+        assert!(matches!(
+            result,
+            Err(CarlaeError::Evaluation(message))
+            if message.to_lowercase().contains(expected)
+        ));
+    }
+
+    #[test]
+    fn refuses_string_multiplication_by_fraction() {
+        let expr = Expr::Grouping(Box::new(binary(
+            string("Carlae"),
+            TokenKind::Star,
+            "*",
+            number(1.5),
+        )));
+        let expected = "fractional numbers";
+
+        let result = expr.evaluate();
+
+        assert!(matches!(
+            result,
+            Err(CarlaeError::Evaluation(message))
+            if message.to_lowercase().contains(expected)
+        ));
+    }
+}
