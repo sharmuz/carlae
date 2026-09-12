@@ -19,7 +19,23 @@ impl Parser {
     }
 
     fn expression(&mut self) -> Result<Expr, CarlaeError> {
-        self.equality()
+        self.not()
+    }
+
+    fn not(&mut self) -> Result<Expr, CarlaeError> {
+        let expr = if self.current_matches(&[TokenKind::Not]) {
+            self.advance();
+            let operator = self.previous().clone();
+            let right = self.not()?;
+            Expr::Unary {
+                operator,
+                right: Box::new(right),
+            }
+        } else {
+            self.equality()?
+        };
+
+        Ok(expr)
     }
 
     fn equality(&mut self) -> Result<Expr, CarlaeError> {
@@ -274,6 +290,57 @@ mod tests {
             .expect("Tokens successfully parsed into Expr");
 
         assert_eq!(expr, expected);
+    }
+
+    #[test]
+    fn parses_repeated_not_with_equality() {
+        let mut parser = Parser::new(vec![
+            Token::new(TokenKind::Not, "not".into(), 1),
+            Token::new(TokenKind::Not, "not".into(), 1),
+            Token::new(TokenKind::Number(1.0), "1".into(), 1),
+            Token::new(TokenKind::EqualEqual, "==".into(), 1),
+            Token::new(TokenKind::Number(1.0), "1".into(), 1),
+            Token::new(TokenKind::Newline, "\n".into(), 1),
+            Token::new(TokenKind::Eof, "".into(), 2),
+        ]);
+        let expected = Expr::Unary {
+            operator: Token::new(TokenKind::Not, "not".into(), 1),
+            right: Box::new(Expr::Unary {
+                operator: Token::new(TokenKind::Not, "not".into(), 1),
+                right: Box::new(Expr::Binary {
+                    left: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
+                    operator: Token::new(TokenKind::EqualEqual, "==".into(), 1),
+                    right: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
+                }),
+            }),
+        };
+
+        let expr = parser
+            .parse()
+            .expect("Tokens successfully parsed into Expr");
+
+        assert_eq!(expr, expected);
+    }
+
+    #[test]
+    fn rejects_not_as_right_operand_of_equality() {
+        let mut parser = Parser::new(vec![
+            Token::new(TokenKind::Number(1.0), "1".into(), 1),
+            Token::new(TokenKind::EqualEqual, "==".into(), 1),
+            Token::new(TokenKind::Not, "not".into(), 1),
+            Token::new(TokenKind::Number(1.0), "1".into(), 1),
+            Token::new(TokenKind::Newline, "\n".into(), 1),
+            Token::new(TokenKind::Eof, "".into(), 2),
+        ]);
+        let expected = "invalid token";
+
+        let result = parser.parse();
+
+        assert!(matches!(
+            result,
+            Err(CarlaeError::Parsing(message))
+            if message.to_lowercase().contains(expected)
+        ));
     }
 
     #[test]
