@@ -28,6 +28,7 @@ impl Expr {
                 "[Line {}]: Bad operand type for unary -: '{val}'",
                 operator.line
             ))),
+            (TokenKind::Not, val) => Ok(LiteralValue::Boolean(!val.is_truthy())),
             (k, _) => Err(CarlaeError::Evaluation(format!(
                 "[Line {}]: Invalid unary operator: {k:?}",
                 operator.line
@@ -275,6 +276,15 @@ impl LiteralValue {
             Self::None => Err(CarlaeError::Evaluation("Cannot convert None to f64".into())),
         }
     }
+
+    pub fn is_truthy(&self) -> bool {
+        match self {
+            Self::Boolean(b) => *b,
+            Self::Number(n) => *n != 0.0,
+            Self::String(s) => !s.is_empty(),
+            Self::None => false,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -291,6 +301,13 @@ mod tests {
 
     fn string(value: &str) -> Expr {
         Expr::Literal(LiteralValue::String(value.into()))
+    }
+
+    fn unary(kind: TokenKind, lexeme: &str, right: Expr) -> Expr {
+        Expr::Unary {
+            operator: Token::new(kind, lexeme.into(), 1),
+            right: Box::new(right),
+        }
     }
 
     fn binary(left: Expr, kind: TokenKind, lexeme: &str, right: Expr) -> Expr {
@@ -414,6 +431,44 @@ mod tests {
             ">",
             string("car"),
         )));
+        let expected = LiteralValue::Boolean(true);
+
+        let eval = expr.evaluate().expect("Expression is evaluated");
+
+        assert_eq!(eval, expected);
+    }
+
+    #[test]
+    fn evals_not_per_truthiness() {
+        let cases = [
+            (boolean(true), LiteralValue::Boolean(false)),
+            (boolean(false), LiteralValue::Boolean(true)),
+            (number(0.0), LiteralValue::Boolean(true)),
+            (number(-88.0), LiteralValue::Boolean(false)),
+            (string(""), LiteralValue::Boolean(true)),
+            (string("hello"), LiteralValue::Boolean(false)),
+            (
+                Expr::Literal(LiteralValue::None),
+                LiteralValue::Boolean(true),
+            ),
+        ];
+
+        for (operand, expected) in cases {
+            let expr = unary(TokenKind::Not, "not", operand);
+
+            let eval = expr.evaluate().expect("Expression is evaluated");
+
+            assert_eq!(eval, expected);
+        }
+    }
+
+    #[test]
+    fn evals_repeated_not() {
+        let expr = unary(
+            TokenKind::Not,
+            "not",
+            unary(TokenKind::Not, "not", string("hello")),
+        );
         let expected = LiteralValue::Boolean(true);
 
         let eval = expr.evaluate().expect("Expression is evaluated");
