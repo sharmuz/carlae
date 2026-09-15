@@ -13,6 +13,7 @@ mod expr;
 mod eval;
 mod parser;
 mod scanner;
+mod stmt;
 mod token;
 
 fn main() -> Result<(), CarlaeError> {
