@@ -2,6 +2,8 @@
 
 This document describes the Carlae programming language, which is a minimal, Python-like language. As it is new and under active development, this may be inexact and incomplete. However, the core semantics and features should become apparent.
 
+Items crossed out are not supported but may be added in future.
+
 ## Types
 
 - Dynamic typing only!
@@ -22,6 +24,7 @@ This document describes the Carlae programming language, which is a minimal, Pyt
 
 ## Statements
 
+- print
 - return
 - if else
 - while
@@ -30,7 +33,7 @@ This document describes the Carlae programming language, which is a minimal, Pyt
 
 ## Functions
 
-- print (built-in)
+- ~~print (built-in)~~
 - def
 - ~~closures~~
 

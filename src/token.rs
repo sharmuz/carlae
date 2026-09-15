@@ -49,6 +49,7 @@ pub enum TokenKind {
     While,
     Def,
     Return,
+    Print,
     True,
     False,
     None,

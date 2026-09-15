@@ -384,6 +384,7 @@ static KEYWORDS: LazyLock<HashMap<String, TokenKind>> = LazyLock::new(|| {
         (String::from("while"), TokenKind::While),
         (String::from("def"), TokenKind::Def),
         (String::from("return"), TokenKind::Return),
+        (String::from("print"), TokenKind::Print),
         (String::from("True"), TokenKind::True),
         (String::from("False"), TokenKind::False),
         (String::from("None"), TokenKind::None),
