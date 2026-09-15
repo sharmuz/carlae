@@ -9,8 +9,8 @@ use crate::parser::Parser;
 use crate::scanner::Scanner;
 
 mod error;
-mod expr;
 mod eval;
+mod expr;
 mod parser;
 mod scanner;
 mod stmt;
@@ -50,11 +50,13 @@ fn run(source: String) -> Result<(), CarlaeError> {
     }
 
     let mut parser = Parser::new(scanner.tokens);
-    let expr = parser.parse()?;
-    println!("{expr}");
+    let program = parser.parse()?;
+    for stmt in program.iter() {
+        println!("{stmt}")
+    }
 
-    let eval = expr.evaluate()?;
-    println!("{eval}");
+    // let eval = program.evaluate()?;
+    // println!("{eval}");
 
     Ok(())
 }

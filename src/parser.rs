@@ -1,5 +1,6 @@
 use crate::error::CarlaeError;
 use crate::expr::{Expr, LiteralValue};
+use crate::stmt::Stmt;
 use crate::token::{Token, TokenKind};
 
 type ParserRule = fn(&mut Parser) -> Result<Expr, CarlaeError>;
@@ -14,8 +15,60 @@ impl Parser {
         Self { tokens, current: 0 }
     }
 
-    pub fn parse(&mut self) -> Result<Expr, CarlaeError> {
-        self.expression()
+    pub fn parse(&mut self) -> Result<Vec<Stmt>, CarlaeError> {
+        self.program()
+    }
+
+    fn program(&mut self) -> Result<Vec<Stmt>, CarlaeError> {
+        let mut program: Vec<Stmt> = Vec::new();
+        while !self.is_at_end() {
+            program.push(self.statement()?);
+        }
+
+        Ok(program)
+    }
+
+    fn statement(&mut self) -> Result<Stmt, CarlaeError> {
+        if let Some(t) = self.peek() {
+            let stmt = match &t.kind {
+                TokenKind::Print => self.print_stmt(t.line)?,
+                _ => self.expression_stmt(t.line)?,
+            };
+            Ok(stmt)
+        } else {
+            let prev = self.previous();
+            Err(CarlaeError::Parsing(format!(
+                "[Line {}] Expected token after {:?}",
+                prev.line, prev.kind
+            )))
+        }
+    }
+
+    fn print_stmt(&mut self, line: usize) -> Result<Stmt, CarlaeError> {
+        self.advance();
+        let expr = self.expression()?;
+
+        if self.current_matches(&[TokenKind::Newline]) {
+            self.advance();
+            Ok(Stmt::PrintStmt(expr))
+        } else {
+            Err(CarlaeError::Parsing(format!(
+                "[Line {line}] Missing newline after print statement",
+            )))
+        }
+    }
+
+    fn expression_stmt(&mut self, line: usize) -> Result<Stmt, CarlaeError> {
+        let expr = self.expression()?;
+
+        if self.current_matches(&[TokenKind::Newline]) {
+            self.advance();
+            Ok(Stmt::ExpressionStmt(expr))
+        } else {
+            Err(CarlaeError::Parsing(format!(
+                "[Line {line}] Missing newline after expression statement",
+            )))
+        }
     }
 
     fn expression(&mut self) -> Result<Expr, CarlaeError> {
@@ -181,6 +234,51 @@ mod tests {
     use super::*;
 
     #[test]
+    fn parses_print_statement() {
+        let mut parser = Parser::new(vec![
+            Token::new(TokenKind::Print, "print".into(), 1),
+            Token::new(TokenKind::Number(1.0), "1".into(), 1),
+            Token::new(TokenKind::Plus, "+".into(), 1),
+            Token::new(TokenKind::Number(2.0), "2".into(), 1),
+            Token::new(TokenKind::Newline, "\n".into(), 1),
+            Token::new(TokenKind::Eof, "".into(), 2),
+        ]);
+        let expected = Expr::Binary {
+            left: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
+            operator: Token::new(TokenKind::Plus, "+".into(), 1),
+            right: Box::new(Expr::Literal(LiteralValue::Number(2.0))),
+        };
+
+        let program = parser
+            .parse()
+            .expect("Tokens successfully parsed into statements");
+
+        assert_eq!(program, vec![Stmt::PrintStmt(expected)]);
+    }
+
+    #[test]
+    fn parses_expression_statement() {
+        let mut parser = Parser::new(vec![
+            Token::new(TokenKind::Number(1.0), "1".into(), 1),
+            Token::new(TokenKind::Plus, "+".into(), 1),
+            Token::new(TokenKind::Number(2.0), "2".into(), 1),
+            Token::new(TokenKind::Newline, "\n".into(), 1),
+            Token::new(TokenKind::Eof, "".into(), 2),
+        ]);
+        let expected = Expr::Binary {
+            left: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
+            operator: Token::new(TokenKind::Plus, "+".into(), 1),
+            right: Box::new(Expr::Literal(LiteralValue::Number(2.0))),
+        };
+
+        let program = parser
+            .parse()
+            .expect("Tokens successfully parsed into statements");
+
+        assert_eq!(program, vec![Stmt::ExpressionStmt(expected)])
+    }
+
+    #[test]
     fn parses_basic_binary_op() {
         let mut parser = Parser::new(vec![
             Token::new(TokenKind::LeftParen, "(".into(), 1),
@@ -198,7 +296,7 @@ mod tests {
         }));
 
         let expr = parser
-            .parse()
+            .expression()
             .expect("Tokens successfully parsed into Expr");
 
         assert_eq!(expr, expected);
@@ -226,7 +324,7 @@ mod tests {
         };
 
         let expr = parser
-            .parse()
+            .expression()
             .expect("Tokens successfully parsed into Expr");
 
         assert_eq!(expr, expected);
@@ -254,7 +352,7 @@ mod tests {
         };
 
         let expr = parser
-            .parse()
+            .expression()
             .expect("Tokens successfully parsed into Expr");
 
         assert_eq!(expr, expected);
@@ -286,7 +384,7 @@ mod tests {
         };
 
         let expr = parser
-            .parse()
+            .expression()
             .expect("Tokens successfully parsed into Expr");
 
         assert_eq!(expr, expected);
@@ -316,7 +414,7 @@ mod tests {
         };
 
         let expr = parser
-            .parse()
+            .expression()
             .expect("Tokens successfully parsed into Expr");
 
         assert_eq!(expr, expected);
@@ -334,7 +432,7 @@ mod tests {
         ]);
         let expected = "invalid token";
 
-        let result = parser.parse();
+        let result = parser.expression();
 
         assert!(matches!(
             result,
@@ -355,7 +453,7 @@ mod tests {
         ]);
         let expected = "missing `)`";
 
-        let result = parser.parse();
+        let result = parser.expression();
 
         assert!(matches!(
             result,
@@ -372,7 +470,7 @@ mod tests {
         ]);
         let expected = "invalid token";
 
-        let result = parser.parse();
+        let result = parser.expression();
 
         assert!(matches!(
             result,
