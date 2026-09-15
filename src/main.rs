@@ -10,6 +10,7 @@ use crate::scanner::Scanner;
 
 mod error;
 mod eval;
+mod exec;
 mod expr;
 mod parser;
 mod scanner;
@@ -45,18 +46,20 @@ fn run_file(path: impl AsRef<Path>) -> Result<(), CarlaeError> {
 fn run(source: String) -> Result<(), CarlaeError> {
     let mut scanner = Scanner::new(source);
     scanner.scan_tokens()?;
-    for t in scanner.tokens.iter() {
-        println!("{t:?}")
-    }
+    // TODO: Print tokens and AST via a --debug flag
+    // for t in scanner.tokens.iter() {
+    //     println!("{t:?}")
+    // }
 
     let mut parser = Parser::new(scanner.tokens);
     let program = parser.parse()?;
-    for stmt in program.iter() {
-        println!("{stmt}")
-    }
+    // for stmt in program.iter() {
+    //     println!("{stmt}")
+    // }
 
-    // let eval = program.evaluate()?;
-    // println!("{eval}");
+    for stmt in program.iter() {
+        stmt.execute()?;
+    }
 
     Ok(())
 }
