@@ -8,8 +8,14 @@ impl Stmt {
                 expr.evaluate()?;
                 Ok(())
             }
-            Self::PrintStmt(expr) => {
-                println!("{}", expr.evaluate()?);
+            Self::PrintStmt(exprs) => {
+                if let Some(e) = exprs.first() {
+                    print!("{}", e.evaluate()?)
+                }
+                for e in exprs.iter().skip(1) {
+                    print!(" {}", e.evaluate()?)
+                }
+                println!();
                 Ok(())
             }
         }

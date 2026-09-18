@@ -46,14 +46,22 @@ impl Parser {
 
     fn print_stmt(&mut self, line: usize) -> Result<Stmt, CarlaeError> {
         self.advance();
-        let expr = self.expression()?;
 
+        let mut exprs: Vec<Expr> = Vec::new();
+
+        if !self.current_matches(&[TokenKind::Newline]) {
+            exprs.push(self.expression()?);
+        };
+        while self.current_matches(&[TokenKind::Comma]) {
+            self.advance();
+            exprs.push(self.expression()?);
+        }
         if self.current_matches(&[TokenKind::Newline]) {
             self.advance();
-            Ok(Stmt::PrintStmt(expr))
+            Ok(Stmt::PrintStmt(exprs))
         } else {
             Err(CarlaeError::Parsing(format!(
-                "[Line {line}] Missing newline after print statement",
+                "[Line {line}] Invalid syntax for print statement",
             )))
         }
     }
@@ -248,6 +256,50 @@ mod tests {
             operator: Token::new(TokenKind::Plus, "+".into(), 1),
             right: Box::new(Expr::Literal(LiteralValue::Number(2.0))),
         };
+
+        let program = parser
+            .parse()
+            .expect("Tokens successfully parsed into statements");
+
+        assert_eq!(program, vec![Stmt::PrintStmt(vec![expected])]);
+    }
+
+    #[test]
+    fn parses_print_statement_with_multiple_exprs() {
+        let mut parser = Parser::new(vec![
+            Token::new(TokenKind::Print, "print".into(), 1),
+            Token::new(TokenKind::Number(1.0), "1".into(), 1),
+            Token::new(TokenKind::Plus, "+".into(), 1),
+            Token::new(TokenKind::Number(2.0), "2".into(), 1),
+            Token::new(TokenKind::Comma, ",".into(), 1),
+            Token::new(TokenKind::Number(3.0), "3".into(), 1),
+            Token::new(TokenKind::Newline, "\n".into(), 1),
+            Token::new(TokenKind::Eof, "".into(), 2),
+        ]);
+        let expected = vec![
+            Expr::Binary {
+                left: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
+                operator: Token::new(TokenKind::Plus, "+".into(), 1),
+                right: Box::new(Expr::Literal(LiteralValue::Number(2.0))),
+            },
+            Expr::Literal(LiteralValue::Number(3.0)),
+        ];
+
+        let program = parser
+            .parse()
+            .expect("Tokens successfully parsed into statements");
+
+        assert_eq!(program, vec![Stmt::PrintStmt(expected)]);
+    }
+
+    #[test]
+    fn parses_print_statement_with_no_exprs() {
+        let mut parser = Parser::new(vec![
+            Token::new(TokenKind::Print, "print".into(), 1),
+            Token::new(TokenKind::Newline, "\n".into(), 1),
+            Token::new(TokenKind::Eof, "".into(), 2),
+        ]);
+        let expected = Vec::new();
 
         let program = parser
             .parse()
