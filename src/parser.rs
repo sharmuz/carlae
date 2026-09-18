@@ -1,6 +1,6 @@
 use crate::error::CarlaeError;
 use crate::expr::{Expr, LiteralValue};
-use crate::stmt::Stmt;
+use crate::stmt::{PrintConfig, PrintMode, Stmt};
 use crate::token::{Token, TokenKind};
 
 type ParserRule = fn(&mut Parser) -> Result<Expr, CarlaeError>;
@@ -48,17 +48,24 @@ impl Parser {
         self.advance();
 
         let mut exprs: Vec<Expr> = Vec::new();
+        let mut mode = PrintMode::FinalNewline;
 
         if !self.current_matches(&[TokenKind::Newline]) {
             exprs.push(self.expression()?);
         };
         while self.current_matches(&[TokenKind::Comma]) {
             self.advance();
-            exprs.push(self.expression()?);
+
+            if self.current_matches(&[TokenKind::Newline]) {
+                mode = PrintMode::NoNewline;
+                break;
+            } else {
+                exprs.push(self.expression()?);
+            }
         }
         if self.current_matches(&[TokenKind::Newline]) {
             self.advance();
-            Ok(Stmt::PrintStmt(exprs))
+            Ok(Stmt::PrintStmt(PrintConfig { exprs, mode }))
         } else {
             Err(CarlaeError::Parsing(format!(
                 "[Line {line}] Invalid syntax for print statement",
@@ -251,17 +258,21 @@ mod tests {
             Token::new(TokenKind::Newline, "\n".into(), 1),
             Token::new(TokenKind::Eof, "".into(), 2),
         ]);
-        let expected = Expr::Binary {
+        let exprs = vec![Expr::Binary {
             left: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
             operator: Token::new(TokenKind::Plus, "+".into(), 1),
             right: Box::new(Expr::Literal(LiteralValue::Number(2.0))),
-        };
+        }];
+        let expected = Stmt::PrintStmt(PrintConfig {
+            exprs,
+            mode: PrintMode::FinalNewline,
+        });
 
         let program = parser
             .parse()
             .expect("Tokens successfully parsed into statements");
 
-        assert_eq!(program, vec![Stmt::PrintStmt(vec![expected])]);
+        assert_eq!(program, vec![expected]);
     }
 
     #[test]
@@ -276,7 +287,7 @@ mod tests {
             Token::new(TokenKind::Newline, "\n".into(), 1),
             Token::new(TokenKind::Eof, "".into(), 2),
         ]);
-        let expected = vec![
+        let exprs = vec![
             Expr::Binary {
                 left: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
                 operator: Token::new(TokenKind::Plus, "+".into(), 1),
@@ -284,12 +295,16 @@ mod tests {
             },
             Expr::Literal(LiteralValue::Number(3.0)),
         ];
+        let expected = Stmt::PrintStmt(PrintConfig {
+            exprs,
+            mode: PrintMode::FinalNewline,
+        });
 
         let program = parser
             .parse()
             .expect("Tokens successfully parsed into statements");
 
-        assert_eq!(program, vec![Stmt::PrintStmt(expected)]);
+        assert_eq!(program, vec![expected]);
     }
 
     #[test]
@@ -299,13 +314,16 @@ mod tests {
             Token::new(TokenKind::Newline, "\n".into(), 1),
             Token::new(TokenKind::Eof, "".into(), 2),
         ]);
-        let expected = Vec::new();
+        let expected = Stmt::PrintStmt(PrintConfig {
+            exprs: Vec::new(),
+            mode: PrintMode::FinalNewline,
+        });
 
         let program = parser
             .parse()
             .expect("Tokens successfully parsed into statements");
 
-        assert_eq!(program, vec![Stmt::PrintStmt(expected)]);
+        assert_eq!(program, vec![expected]);
     }
 
     #[test]

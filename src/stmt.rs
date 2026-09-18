@@ -3,18 +3,21 @@ use crate::expr::Expr;
 #[derive(Debug, PartialEq)]
 pub enum Stmt {
     ExpressionStmt(Expr),
-    PrintStmt(Vec<Expr>),
+    PrintStmt(PrintConfig),
 }
 
 impl std::fmt::Display for Stmt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::ExpressionStmt(expr) => write!(f, "{expr}"),
-            Self::PrintStmt(exprs) => {
+            Self::PrintStmt(PrintConfig { exprs, mode }) => {
                 if let Some(e) = exprs.first() {
                     write!(f, "print {e}")?;
                     for e in exprs.iter().skip(1) {
                         write!(f, ", {e}")?;
+                    }
+                    if matches!(mode, PrintMode::NoNewline) {
+                        write!(f, ",")?;
                     }
                     Ok(())
                 } else {
@@ -25,6 +28,18 @@ impl std::fmt::Display for Stmt {
     }
 }
 
+#[derive(Debug, PartialEq)]
+pub struct PrintConfig {
+    pub exprs: Vec<Expr>,
+    pub mode: PrintMode,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum PrintMode {
+    FinalNewline,
+    NoNewline,
+}
+
 #[cfg(test)]
 mod tests {
     use crate::expr::LiteralValue;
@@ -33,10 +48,13 @@ mod tests {
 
     #[test]
     fn print_statement_displays_multiple_exprs() {
-        let print_stmt = Stmt::PrintStmt(vec![
-            Expr::Literal(LiteralValue::Number(1.0)),
-            Expr::Literal(LiteralValue::Number(2.0)),
-        ]);
+        let print_stmt = Stmt::PrintStmt(PrintConfig {
+            exprs: vec![
+                Expr::Literal(LiteralValue::Number(1.0)),
+                Expr::Literal(LiteralValue::Number(2.0)),
+            ],
+            mode: PrintMode::FinalNewline,
+        });
         let expected = String::from("print 1, 2");
 
         assert_eq!(print_stmt.to_string(), expected);
@@ -44,7 +62,10 @@ mod tests {
 
     #[test]
     fn print_statement_displays_empty() {
-        let print_stmt = Stmt::PrintStmt(Vec::new());
+        let print_stmt = Stmt::PrintStmt(PrintConfig {
+            exprs: Vec::new(),
+            mode: PrintMode::FinalNewline,
+        });
         let expected = String::from("print");
 
         assert_eq!(print_stmt.to_string(), expected);

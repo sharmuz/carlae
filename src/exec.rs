@@ -1,5 +1,5 @@
 use crate::error::CarlaeError;
-use crate::stmt::Stmt;
+use crate::stmt::{PrintConfig, PrintMode, Stmt};
 
 impl Stmt {
     pub fn execute(&self) -> Result<(), CarlaeError> {
@@ -8,14 +8,16 @@ impl Stmt {
                 expr.evaluate()?;
                 Ok(())
             }
-            Self::PrintStmt(exprs) => {
+            Self::PrintStmt(PrintConfig { exprs, mode }) => {
                 if let Some(e) = exprs.first() {
                     print!("{}", e.evaluate()?)
                 }
                 for e in exprs.iter().skip(1) {
                     print!(" {}", e.evaluate()?)
                 }
-                println!();
+                if matches!(mode, PrintMode::FinalNewline) {
+                    println!();
+                }
                 Ok(())
             }
         }
