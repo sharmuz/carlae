@@ -2,15 +2,15 @@ use crate::expr::Expr;
 
 #[derive(Debug, PartialEq)]
 pub enum Stmt {
-    ExpressionStmt(Expr),
-    PrintStmt(PrintConfig),
+    Expression(Expr),
+    Print(PrintConfig),
 }
 
 impl std::fmt::Display for Stmt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::ExpressionStmt(expr) => write!(f, "{expr}"),
-            Self::PrintStmt(PrintConfig { exprs, mode }) => {
+            Self::Expression(expr) => write!(f, "{expr}"),
+            Self::Print(PrintConfig { exprs, mode }) => {
                 if let Some(e) = exprs.first() {
                     write!(f, "print {e}")?;
                     for e in exprs.iter().skip(1) {
@@ -48,7 +48,7 @@ mod tests {
 
     #[test]
     fn print_statement_displays_multiple_exprs() {
-        let print_stmt = Stmt::PrintStmt(PrintConfig {
+        let print_stmt = Stmt::Print(PrintConfig {
             exprs: vec![
                 Expr::Literal(LiteralValue::Number(1.0)),
                 Expr::Literal(LiteralValue::Number(2.0)),
@@ -62,7 +62,7 @@ mod tests {
 
     #[test]
     fn print_statement_displays_empty() {
-        let print_stmt = Stmt::PrintStmt(PrintConfig {
+        let print_stmt = Stmt::Print(PrintConfig {
             exprs: Vec::new(),
             mode: PrintMode::FinalNewline,
         });

@@ -65,7 +65,7 @@ impl Parser {
         }
         if self.current_matches(&[TokenKind::Newline]) {
             self.advance();
-            Ok(Stmt::PrintStmt(PrintConfig { exprs, mode }))
+            Ok(Stmt::Print(PrintConfig { exprs, mode }))
         } else {
             Err(CarlaeError::Parsing(format!(
                 "[Line {line}] Invalid syntax for print statement",
@@ -78,7 +78,7 @@ impl Parser {
 
         if self.current_matches(&[TokenKind::Newline]) {
             self.advance();
-            Ok(Stmt::ExpressionStmt(expr))
+            Ok(Stmt::Expression(expr))
         } else {
             Err(CarlaeError::Parsing(format!(
                 "[Line {line}] Missing newline after expression statement",
@@ -263,7 +263,7 @@ mod tests {
             operator: Token::new(TokenKind::Plus, "+".into(), 1),
             right: Box::new(Expr::Literal(LiteralValue::Number(2.0))),
         }];
-        let expected = Stmt::PrintStmt(PrintConfig {
+        let expected = Stmt::Print(PrintConfig {
             exprs,
             mode: PrintMode::FinalNewline,
         });
@@ -295,7 +295,7 @@ mod tests {
             },
             Expr::Literal(LiteralValue::Number(3.0)),
         ];
-        let expected = Stmt::PrintStmt(PrintConfig {
+        let expected = Stmt::Print(PrintConfig {
             exprs,
             mode: PrintMode::FinalNewline,
         });
@@ -314,7 +314,7 @@ mod tests {
             Token::new(TokenKind::Newline, "\n".into(), 1),
             Token::new(TokenKind::Eof, "".into(), 2),
         ]);
-        let expected = Stmt::PrintStmt(PrintConfig {
+        let expected = Stmt::Print(PrintConfig {
             exprs: Vec::new(),
             mode: PrintMode::FinalNewline,
         });
@@ -345,7 +345,7 @@ mod tests {
             .parse()
             .expect("Tokens successfully parsed into statements");
 
-        assert_eq!(program, vec![Stmt::ExpressionStmt(expected)])
+        assert_eq!(program, vec![Stmt::Expression(expected)])
     }
 
     #[test]
