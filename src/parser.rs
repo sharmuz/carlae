@@ -31,7 +31,11 @@ impl Parser {
     fn statement(&mut self) -> Result<Stmt, CarlaeError> {
         if let Some(t) = self.peek() {
             let stmt = match &t.kind {
-                TokenKind::Print => self.print_stmt(t.line)?,
+                TokenKind::Print => {
+                    let line = t.line;
+                    self.advance();
+                    self.print_stmt(line)?
+                }
                 _ => self.expression_stmt(t.line)?,
             };
             Ok(stmt)
@@ -45,8 +49,6 @@ impl Parser {
     }
 
     fn print_stmt(&mut self, line: usize) -> Result<Stmt, CarlaeError> {
-        self.advance();
-
         let mut exprs: Vec<Expr> = Vec::new();
         let mut mode = PrintMode::FinalNewline;
 
