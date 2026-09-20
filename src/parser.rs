@@ -1,6 +1,6 @@
 use crate::error::CarlaeError;
 use crate::expr::{Expr, LiteralValue};
-use crate::stmt::{PrintConfig, PrintMode, Stmt};
+use crate::stmt::{PrintConfig, PrintMode, Stmt, VariableDeclaration};
 use crate::token::{Token, TokenKind};
 
 type ParserRule = fn(&mut Parser) -> Result<Expr, CarlaeError>;
@@ -22,10 +22,58 @@ impl Parser {
     fn program(&mut self) -> Result<Vec<Stmt>, CarlaeError> {
         let mut program: Vec<Stmt> = Vec::new();
         while !self.is_at_end() {
-            program.push(self.statement()?);
+            match self.declaration() {
+                Ok(Some(stmt)) => program.push(stmt),
+                Ok(None) => (),
+                Err(e) => return Err(e),
+            }
         }
 
         Ok(program)
+    }
+
+    fn declaration(&mut self) -> Result<Option<Stmt>, CarlaeError> {
+        // A variable declaration is a identifier followed by `=`
+        let stmt = if let Some(
+            t @ Token {
+                kind: TokenKind::Identifier(_),
+                ..
+            },
+        ) = self.peek()
+            && let Some(Token {
+                kind: TokenKind::Equal,
+                ..
+            }) = self.peek_next()
+        {
+            let name = t.clone();
+            self.advance();
+            self.advance();
+            self.var_declaration(name)
+        } else {
+            self.statement()
+        };
+
+        match stmt {
+            Ok(s) => Ok(Some(s)),
+            Err(_) => match self.synchronize() {
+                Ok(_) => Ok(None),
+                Err(e) => Err(e),
+            },
+        }
+    }
+
+    fn var_declaration(&mut self, name: Token) -> Result<Stmt, CarlaeError> {
+        let initializer = self.expression()?;
+
+        if self.current_matches(&[TokenKind::Newline]) {
+            self.advance();
+            Ok(Stmt::Variable(VariableDeclaration { name, initializer }))
+        } else {
+            Err(CarlaeError::Parsing(format!(
+                "[Line {}]: Invalid syntax for variable declaration",
+                name.line
+            )))
+        }
     }
 
     fn statement(&mut self) -> Result<Stmt, CarlaeError> {
@@ -180,6 +228,7 @@ impl Parser {
                 TokenKind::True => Expr::Literal(LiteralValue::Boolean(true)),
                 TokenKind::False => Expr::Literal(LiteralValue::Boolean(false)),
                 TokenKind::None => Expr::Literal(LiteralValue::None),
+                TokenKind::Identifier(_) => Expr::Variable(t.clone()),
                 TokenKind::LeftParen => {
                     self.advance();
                     return self.grouping();
@@ -234,6 +283,10 @@ impl Parser {
         self.tokens.get(self.current)
     }
 
+    fn peek_next(&self) -> Option<&Token> {
+        self.tokens.get(self.current + 1)
+    }
+
     fn previous(&self) -> &Token {
         self.current
             .checked_sub(1)
@@ -241,7 +294,7 @@ impl Parser {
             .expect("Previous token exists")
     }
 
-    fn _synchronize(&mut self) {
+    fn synchronize(&mut self) -> Result<(), CarlaeError> {
         todo!()
     }
 }

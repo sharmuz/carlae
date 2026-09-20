@@ -13,6 +13,7 @@ pub enum Expr {
         right: Box<Expr>,
     },
     Grouping(Box<Expr>),
+    Variable(Token),
 }
 
 impl std::fmt::Display for Expr {
@@ -25,7 +26,8 @@ impl std::fmt::Display for Expr {
                 left,
                 right,
             } => write!(f, "({} {} {})", operator.lexeme, left, right),
-            Self::Grouping(expr) => write! {f, "(group {expr})"},
+            Self::Grouping(expr) => write!(f, "(group {expr})"),
+            Self::Variable(t) => write!(f, "{}", t.lexeme),
         }
     }
 }

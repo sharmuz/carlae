@@ -1,9 +1,11 @@
 use crate::expr::Expr;
+use crate::token::Token;
 
 #[derive(Debug, PartialEq)]
 pub enum Stmt {
     Expression(Expr),
     Print(PrintConfig),
+    Variable(VariableDeclaration),
 }
 
 impl std::fmt::Display for Stmt {
@@ -24,6 +26,9 @@ impl std::fmt::Display for Stmt {
                     write!(f, "print")
                 }
             }
+            Self::Variable(VariableDeclaration { name, initializer }) => {
+                write!(f, "{} = {}", name.lexeme, initializer)
+            }
         }
     }
 }
@@ -38,6 +43,12 @@ pub struct PrintConfig {
 pub enum PrintMode {
     FinalNewline,
     NoNewline,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct VariableDeclaration {
+    pub name: Token,
+    pub initializer: Expr,
 }
 
 #[cfg(test)]

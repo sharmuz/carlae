@@ -13,6 +13,7 @@ impl Expr {
                 right,
             } => Self::eval_binary(left, operator, right),
             Self::Grouping(expr) => expr.evaluate(),
+            Self::Variable(_) => todo!(),
         }
     }
 

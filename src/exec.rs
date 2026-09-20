@@ -20,6 +20,7 @@ impl Stmt {
                 }
                 Ok(())
             }
+            Self::Variable(_) => todo!(),
         }
     }
 }
