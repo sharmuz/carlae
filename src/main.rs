@@ -8,6 +8,7 @@ use crate::error::CarlaeError;
 use crate::parser::Parser;
 use crate::scanner::Scanner;
 
+mod environment;
 mod error;
 mod eval;
 mod exec;
