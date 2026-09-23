@@ -5,6 +5,7 @@ use std::{
 };
 
 use crate::error::CarlaeError;
+use crate::interpreter::Interpreter;
 use crate::parser::Parser;
 use crate::scanner::Scanner;
 
@@ -59,9 +60,6 @@ fn run(source: String) -> Result<(), CarlaeError> {
     //     println!("{stmt}")
     // }
 
-    for stmt in program.iter() {
-        stmt.execute()?;
-    }
-
-    Ok(())
+    let mut interpreter = Interpreter::new();
+    interpreter.interpret(&program)
 }

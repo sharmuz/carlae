@@ -15,11 +15,9 @@ impl Interpreter {
 
     pub fn interpret(&mut self, program: &[Stmt]) -> Result<(), CarlaeError> {
         for stmt in program.iter() {
-            // TODO: self.execute(stmt)?
+            self.execute(stmt)?
         }
 
         Ok(())
     }
-
-    // TODO: Move from eval.rs and exec.rs to here?
 }

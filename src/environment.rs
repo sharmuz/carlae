@@ -4,11 +4,11 @@ use crate::error::CarlaeError;
 use crate::expr::LiteralValue;
 use crate::token::Token;
 
-pub struct Environment<'a> {
-    values: HashMap<&'a String, LiteralValue>,
+pub struct Environment {
+    values: HashMap<String, LiteralValue>,
 }
 
-impl<'a> Environment<'a> {
+impl Environment {
     pub fn new() -> Self {
         Self {
             values: HashMap::new(),
@@ -24,7 +24,7 @@ impl<'a> Environment<'a> {
             )))
     }
 
-    pub fn define(&mut self, name: &'a String, value: LiteralValue) -> Option<LiteralValue> {
+    pub fn define(&mut self, name: String, value: LiteralValue) -> Option<LiteralValue> {
         self.values.insert(name, value)
     }
 }
@@ -39,7 +39,7 @@ mod tests {
         let mut env = Environment::new();
         let name = "foo".to_string();
 
-        env.define(&name, LiteralValue::Number(2.0));
+        env.define(name, LiteralValue::Number(2.0));
         let token = Token::new(
             TokenKind::Identifier("foo".to_string()),
             "foo".to_string(),
@@ -54,7 +54,7 @@ mod tests {
         let mut env = Environment::new();
         let name = "foo".to_string();
 
-        env.define(&name, LiteralValue::Number(2.0));
+        env.define(name, LiteralValue::Number(2.0));
         let token = Token::new(
             TokenKind::Identifier("bar".to_string()),
             "bar".to_string(),

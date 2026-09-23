@@ -1,26 +1,31 @@
 use crate::error::CarlaeError;
-use crate::stmt::{PrintConfig, PrintMode, Stmt};
+use crate::interpreter::Interpreter;
+use crate::stmt::{VariableDeclaration, PrintConfig, PrintMode, Stmt};
 
-impl Stmt {
-    pub fn execute(&self) -> Result<(), CarlaeError> {
-        match self {
-            Self::Expression(expr) => {
-                expr.evaluate()?;
+impl Interpreter {
+    pub fn execute(&mut self, stmt: &Stmt) -> Result<(), CarlaeError> {
+        match stmt {
+            Stmt::Expression(expr) => {
+                self.evaluate(expr)?;
                 Ok(())
             }
-            Self::Print(PrintConfig { exprs, mode }) => {
+            Stmt::Print(PrintConfig { exprs, mode }) => {
                 if let Some(e) = exprs.first() {
-                    print!("{}", e.evaluate()?)
+                    print!("{}", self.evaluate(e)?)
                 }
                 for e in exprs.iter().skip(1) {
-                    print!(" {}", e.evaluate()?)
+                    print!(" {}", self.evaluate(e)?)
                 }
                 if matches!(mode, PrintMode::FinalNewline) {
                     println!();
                 }
                 Ok(())
             }
-            Self::Variable(_) => todo!(),
+            Stmt::Variable(VariableDeclaration { name, initializer }) => {
+                let value = self.evaluate(initializer)?;
+                self.env.define(name.lexeme.to_string(), value);
+                Ok(())
+            }
         }
     }
 }

@@ -1,24 +1,25 @@
 use crate::error::CarlaeError;
 use crate::expr::{Expr, LiteralValue};
+use crate::interpreter::Interpreter;
 use crate::token::{Token, TokenKind};
 
-impl Expr {
-    pub fn evaluate(&self) -> Result<LiteralValue, CarlaeError> {
-        match self {
-            Self::Literal(val) => Ok(val.clone()),
-            Self::Unary { operator, right } => Self::eval_unary(operator, right),
-            Self::Binary {
+impl Interpreter {
+    pub fn evaluate(&self, expr: &Expr) -> Result<LiteralValue, CarlaeError> {
+        match expr {
+            Expr::Literal(val) => Ok(val.clone()),
+            Expr::Unary { operator, right } => self.eval_unary(operator, right),
+            Expr::Binary {
                 left,
                 operator,
                 right,
-            } => Self::eval_binary(left, operator, right),
-            Self::Grouping(expr) => expr.evaluate(),
-            Self::Variable(_) => todo!(),
+            } => self.eval_binary(left, operator, right),
+            Expr::Grouping(e) => self.evaluate(e),
+            Expr::Variable(t) => self.env.get(t).cloned(),
         }
     }
 
-    fn eval_unary(operator: &Token, right: &Self) -> Result<LiteralValue, CarlaeError> {
-        let operand = right.evaluate()?;
+    fn eval_unary(&self, operator: &Token, right: &Expr) -> Result<LiteralValue, CarlaeError> {
+        let operand = self.evaluate(right)?;
 
         match (&operator.kind, operand) {
             (TokenKind::Minus, LiteralValue::Number(n)) => Ok(LiteralValue::Number(-n)),
@@ -38,12 +39,13 @@ impl Expr {
     }
 
     fn eval_binary(
-        left: &Self,
+        &self,
+        left: &Expr,
         operator: &Token,
-        right: &Self,
+        right: &Expr,
     ) -> Result<LiteralValue, CarlaeError> {
-        let left = left.evaluate()?;
-        let right = right.evaluate()?;
+        let left = self.evaluate(left)?;
+        let right = self.evaluate(right)?;
 
         match &operator.kind {
             TokenKind::Plus => match (left, right) {
@@ -321,6 +323,7 @@ mod tests {
 
     #[test]
     fn evals_trivial_arithmetic() {
+        let itpr = Interpreter::new();
         let expr = Expr::Grouping(Box::new(binary(
             number(1.0),
             TokenKind::Plus,
@@ -329,13 +332,14 @@ mod tests {
         )));
         let expected = LiteralValue::Number(3.0);
 
-        let eval = expr.evaluate().expect("Expression is evaluated");
+        let eval = itpr.evaluate(&expr).expect("Expression is evaluated");
 
         assert_eq!(eval, expected);
     }
 
     #[test]
     fn evals_number_arithmetic_with_all_binary_ops() {
+        let itpr = Interpreter::new();
         let expr = Expr::Grouping(Box::new(binary(
             binary(
                 binary(
@@ -354,13 +358,14 @@ mod tests {
         )));
         let expected = LiteralValue::Number(13.0);
 
-        let eval = expr.evaluate().expect("Expression is evaluated");
+        let eval = itpr.evaluate(&expr).expect("Expression is evaluated");
 
         assert_eq!(eval, expected);
     }
 
     #[test]
     fn evals_arithmetic_with_numbers_and_bools() {
+        let itpr = Interpreter::new();
         let expr = Expr::Grouping(Box::new(binary(
             binary(
                 binary(
@@ -379,13 +384,14 @@ mod tests {
         )));
         let expected = LiteralValue::Number(18.0);
 
-        let eval = expr.evaluate().expect("Expression is evaluated");
+        let eval = itpr.evaluate(&expr).expect("Expression is evaluated");
 
         assert_eq!(eval, expected);
     }
 
     #[test]
     fn evals_string_arithmetic() {
+        let itpr = Interpreter::new();
         let expr = Expr::Grouping(Box::new(binary(
             binary(
                 binary(
@@ -404,13 +410,14 @@ mod tests {
         )));
         let expected = LiteralValue::String("CarlaeCarlae!".into());
 
-        let eval = expr.evaluate().expect("Expression is evaluated");
+        let eval = itpr.evaluate(&expr).expect("Expression is evaluated");
 
         assert_eq!(eval, expected);
     }
 
     #[test]
     fn evals_equality_between_numbers() {
+        let itpr = Interpreter::new();
         let expr = Expr::Grouping(Box::new(binary(
             binary(number(1.0), TokenKind::Plus, "+", number(2.0)),
             TokenKind::EqualEqual,
@@ -419,13 +426,14 @@ mod tests {
         )));
         let expected = LiteralValue::Boolean(true);
 
-        let eval = expr.evaluate().expect("Expression is evaluated");
+        let eval = itpr.evaluate(&expr).expect("Expression is evaluated");
 
         assert_eq!(eval, expected);
     }
 
     #[test]
     fn evals_greater_than_between_strings() {
+        let itpr = Interpreter::new();
         let expr = Expr::Grouping(Box::new(binary(
             string("cat"),
             TokenKind::Greater,
@@ -434,13 +442,14 @@ mod tests {
         )));
         let expected = LiteralValue::Boolean(true);
 
-        let eval = expr.evaluate().expect("Expression is evaluated");
+        let eval = itpr.evaluate(&expr).expect("Expression is evaluated");
 
         assert_eq!(eval, expected);
     }
 
     #[test]
     fn evals_not_per_truthiness() {
+        let itpr = Interpreter::new();
         let cases = [
             (boolean(true), LiteralValue::Boolean(false)),
             (boolean(false), LiteralValue::Boolean(true)),
@@ -457,7 +466,7 @@ mod tests {
         for (operand, expected) in cases {
             let expr = unary(TokenKind::Not, "not", operand);
 
-            let eval = expr.evaluate().expect("Expression is evaluated");
+            let eval = itpr.evaluate(&expr).expect("Expression is evaluated");
 
             assert_eq!(eval, expected);
         }
@@ -465,6 +474,7 @@ mod tests {
 
     #[test]
     fn evals_repeated_not() {
+        let itpr = Interpreter::new();
         let expr = unary(
             TokenKind::Not,
             "not",
@@ -472,13 +482,14 @@ mod tests {
         );
         let expected = LiteralValue::Boolean(true);
 
-        let eval = expr.evaluate().expect("Expression is evaluated");
+        let eval = itpr.evaluate(&expr).expect("Expression is evaluated");
 
         assert_eq!(eval, expected);
     }
 
     #[test]
     fn refuses_divide_by_zero() {
+        let itpr = Interpreter::new();
         let expr = Expr::Grouping(Box::new(binary(
             number(1.0),
             TokenKind::Slash,
@@ -487,7 +498,7 @@ mod tests {
         )));
         let expected = "divide by zero";
 
-        let result = expr.evaluate();
+        let result = itpr.evaluate(&expr);
 
         assert!(matches!(
             result,
@@ -498,6 +509,7 @@ mod tests {
 
     #[test]
     fn refuses_divide_by_false() {
+        let itpr = Interpreter::new();
         let expr = Expr::Grouping(Box::new(binary(
             number(1.0),
             TokenKind::Slash,
@@ -506,7 +518,7 @@ mod tests {
         )));
         let expected = "divide by false";
 
-        let result = expr.evaluate();
+        let result = itpr.evaluate(&expr);
 
         assert!(matches!(
             result,
@@ -517,6 +529,7 @@ mod tests {
 
     #[test]
     fn refuses_string_multiplication_by_fraction() {
+        let itpr = Interpreter::new();
         let expr = Expr::Grouping(Box::new(binary(
             string("Carlae"),
             TokenKind::Star,
@@ -525,7 +538,7 @@ mod tests {
         )));
         let expected = "fractional numbers";
 
-        let result = expr.evaluate();
+        let result = itpr.evaluate(&expr);
 
         assert!(matches!(
             result,
