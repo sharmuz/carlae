@@ -23,7 +23,7 @@ impl Interpreter {
             }
             Stmt::Variable(Assignment { name, initializer }) => {
                 let value = self.evaluate(initializer)?;
-                self.env.define(name.lexeme.to_string(), value);
+                self.env.bind(name.lexeme.to_string(), value);
                 Ok(())
             }
         }
