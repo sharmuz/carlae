@@ -1,6 +1,6 @@
 use crate::error::CarlaeError;
 use crate::expr::{Expr, LiteralValue};
-use crate::stmt::{PrintConfig, PrintMode, Stmt, VariableDeclaration};
+use crate::stmt::{Assignment, PrintConfig, PrintMode, Stmt};
 use crate::token::{Token, TokenKind};
 
 type ParserRule = fn(&mut Parser) -> Result<Expr, CarlaeError>;
@@ -67,7 +67,7 @@ impl Parser {
 
         if self.current_matches(&[TokenKind::Newline]) {
             self.advance();
-            Ok(Stmt::Variable(VariableDeclaration { name, initializer }))
+            Ok(Stmt::Variable(Assignment { name, initializer }))
         } else {
             Err(CarlaeError::Parsing(format!(
                 "[Line {}]: Invalid syntax for variable declaration",

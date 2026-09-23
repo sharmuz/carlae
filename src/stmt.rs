@@ -5,7 +5,7 @@ use crate::token::Token;
 pub enum Stmt {
     Expression(Expr),
     Print(PrintConfig),
-    Variable(VariableDeclaration),
+    Variable(Assignment),
 }
 
 impl std::fmt::Display for Stmt {
@@ -26,7 +26,7 @@ impl std::fmt::Display for Stmt {
                     write!(f, "print")
                 }
             }
-            Self::Variable(VariableDeclaration { name, initializer }) => {
+            Self::Variable(Assignment { name, initializer }) => {
                 write!(f, "{} = {}", name.lexeme, initializer)
             }
         }
@@ -46,16 +46,15 @@ pub enum PrintMode {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct VariableDeclaration {
+pub struct Assignment {
     pub name: Token,
     pub initializer: Expr,
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::expr::LiteralValue;
-
     use super::*;
+    use crate::expr::LiteralValue;
 
     #[test]
     fn print_statement_displays_multiple_exprs() {

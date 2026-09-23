@@ -1,6 +1,6 @@
 use crate::error::CarlaeError;
 use crate::interpreter::Interpreter;
-use crate::stmt::{VariableDeclaration, PrintConfig, PrintMode, Stmt};
+use crate::stmt::{Assignment, PrintConfig, PrintMode, Stmt};
 
 impl Interpreter {
     pub fn execute(&mut self, stmt: &Stmt) -> Result<(), CarlaeError> {
@@ -21,7 +21,7 @@ impl Interpreter {
                 }
                 Ok(())
             }
-            Stmt::Variable(VariableDeclaration { name, initializer }) => {
+            Stmt::Variable(Assignment { name, initializer }) => {
                 let value = self.evaluate(initializer)?;
                 self.env.define(name.lexeme.to_string(), value);
                 Ok(())
