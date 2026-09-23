@@ -9,6 +9,7 @@ impl Interpreter {
                 self.evaluate(expr)?;
                 Ok(())
             }
+            Stmt::If(_) => todo!(),
             Stmt::Print(PrintConfig { exprs, mode }) => {
                 if let Some(e) = exprs.first() {
                     print!("{}", self.evaluate(e)?)
