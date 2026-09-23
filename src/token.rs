@@ -41,7 +41,7 @@ pub enum TokenKind {
     // Literals
     Number(f64),
     String(String),
-    Identifier(String),
+    Identifier(String),  // TODO: Remove payload as lexeme sufficient
 
     // Keywords
     If,
