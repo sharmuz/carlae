@@ -364,6 +364,80 @@ mod tests {
     use super::*;
 
     #[test]
+    fn parses_if_statement_with_inline_suite_no_else() {
+        let mut parser = Parser::new(vec![
+            Token::new(TokenKind::If, "if".into(), 1),
+            Token::new(TokenKind::Number(1.0), "1".into(), 1),
+            Token::new(TokenKind::Greater, ">".into(), 1),
+            Token::new(TokenKind::Number(0.0), "0".into(), 1),
+            Token::new(TokenKind::Colon, ":".into(), 1),
+            Token::new(TokenKind::Identifier("x".into()), "x".into(), 1),
+            Token::new(TokenKind::Equal, "=".into(), 1),
+            Token::new(TokenKind::Number(1.0), "1".into(), 1),
+            Token::new(TokenKind::Newline, "\n".into(), 1),
+            Token::new(TokenKind::Eof, "".into(), 2),
+        ]);
+        let expected = Stmt::If(IfClause {
+            cond: Expr::Binary {
+                left: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
+                operator: Token::new(TokenKind::Greater, ">".into(), 1),
+                right: Box::new(Expr::Literal(LiteralValue::Number(0.0))),
+            },
+            then: vec![Stmt::Variable(Assignment {
+                name: Token::new(TokenKind::Identifier("x".into()), "x".into(), 1),
+                initializer: Expr::Literal(LiteralValue::Number(1.0)),
+            })],
+            r#else: None,
+        });
+
+        let program = parser
+            .parse()
+            .expect("Tokens successfully parsed into statements");
+
+        assert_eq!(program, vec![expected]);
+    }
+
+    #[test]
+    fn parses_if_statement_with_indented_suite_and_else() {
+        let mut parser = Parser::new(vec![
+            Token::new(TokenKind::If, "if".into(), 1),
+            Token::new(TokenKind::True, "True".into(), 1),
+            Token::new(TokenKind::Colon, ":".into(), 1),
+            Token::new(TokenKind::Newline, "\n".into(), 1),
+            Token::new(TokenKind::Indent, "    ".into(), 2),
+            Token::new(TokenKind::Identifier("x".into()), "x".into(), 2),
+            Token::new(TokenKind::Equal, "=".into(), 2),
+            Token::new(TokenKind::Number(1.0), "1".into(), 2),
+            Token::new(TokenKind::Newline, "\n".into(), 2),
+            Token::new(TokenKind::Dedent, "".into(), 3),
+            Token::new(TokenKind::Else, "else".into(), 3),
+            Token::new(TokenKind::Colon, ":".into(), 3),
+            Token::new(TokenKind::Identifier("x".into()), "x".into(), 3),
+            Token::new(TokenKind::Equal, "=".into(), 3),
+            Token::new(TokenKind::Number(0.0), "0".into(), 3),
+            Token::new(TokenKind::Newline, "\n".into(), 3),
+            Token::new(TokenKind::Eof, "".into(), 4),
+        ]);
+        let expected = Stmt::If(IfClause {
+            cond: Expr::Literal(LiteralValue::Boolean(true)),
+            then: vec![Stmt::Variable(Assignment {
+                name: Token::new(TokenKind::Identifier("x".into()), "x".into(), 2),
+                initializer: Expr::Literal(LiteralValue::Number(1.0)),
+            })],
+            r#else: Some(vec![Stmt::Variable(Assignment {
+                name: Token::new(TokenKind::Identifier("x".into()), "x".into(), 3),
+                initializer: Expr::Literal(LiteralValue::Number(0.0)),
+            })]),
+        });
+
+        let program = parser
+            .parse()
+            .expect("Tokens successfully parsed into statements");
+
+        assert_eq!(program, vec![expected]);
+    }
+
+    #[test]
     fn parses_print_statement() {
         let mut parser = Parser::new(vec![
             Token::new(TokenKind::Print, "print".into(), 1),
