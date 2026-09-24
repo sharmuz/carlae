@@ -454,6 +454,49 @@ mod tests {
     }
 
     #[test]
+    fn parses_while_statement_with_two_line_body() {
+        let mut parser = Parser::new(vec![
+            Token::new(TokenKind::While, "while".into(), 1),
+            Token::new(TokenKind::Identifier("x".into()), "x".into(), 1),
+            Token::new(TokenKind::Colon, ":".into(), 1),
+            Token::new(TokenKind::Newline, "\n".into(), 1),
+            Token::new(TokenKind::Indent, "    ".into(), 2),
+            Token::new(TokenKind::Identifier("x".into()), "x".into(), 2),
+            Token::new(TokenKind::Equal, "=".into(), 2),
+            Token::new(TokenKind::Number(0.0), "0".into(), 2),
+            Token::new(TokenKind::Newline, "\n".into(), 2),
+            Token::new(TokenKind::Print, "print".into(), 3),
+            Token::new(TokenKind::Identifier("x".into()), "x".into(), 3),
+            Token::new(TokenKind::Newline, "\n".into(), 3),
+            Token::new(TokenKind::Dedent, "".into(), 4),
+            Token::new(TokenKind::Eof, "".into(), 4),
+        ]);
+        let expected = Stmt::While(WhileClause {
+            cond: Expr::Variable(Token::new(TokenKind::Identifier("x".into()), "x".into(), 1)),
+            body: vec![
+                Stmt::Variable(Assignment {
+                    name: Token::new(TokenKind::Identifier("x".into()), "x".into(), 2),
+                    initializer: Expr::Literal(LiteralValue::Number(0.0)),
+                }),
+                Stmt::Print(PrintConfig {
+                    exprs: vec![Expr::Variable(Token::new(
+                        TokenKind::Identifier("x".into()),
+                        "x".into(),
+                        3,
+                    ))],
+                    mode: PrintMode::FinalNewline,
+                }),
+            ],
+        });
+
+        let program = parser
+            .parse()
+            .expect("Tokens successfully parsed into statements");
+
+        assert_eq!(program, vec![expected]);
+    }
+
+    #[test]
     fn parses_print_statement() {
         let mut parser = Parser::new(vec![
             Token::new(TokenKind::Print, "print".into(), 1),
