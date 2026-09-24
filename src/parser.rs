@@ -22,47 +22,75 @@ impl Parser {
     fn program(&mut self) -> Result<Vec<Stmt>, CarlaeError> {
         let mut program: Vec<Stmt> = Vec::new();
         while !self.is_at_end() {
-            match self.declaration() {
-                Ok(Some(stmt)) => program.push(stmt),
-                Ok(None) => (),
-                Err(e) => return Err(e),
+            match self.statement() {
+                Ok(stmt) => program.push(stmt),
+                Err(_) => match self.synchronize() {
+                    Ok(_) => (),
+                    Err(e) => return Err(e),
+                },
             }
         }
 
         Ok(program)
     }
 
-    fn declaration(&mut self) -> Result<Option<Stmt>, CarlaeError> {
-        // A variable declaration is a identifier followed by `=`
-        let stmt = if let Some(
-            t @ Token {
-                kind: TokenKind::Identifier(_),
-                ..
-            },
-        ) = self.peek()
-            && let Some(Token {
-                kind: TokenKind::Equal,
-                ..
-            }) = self.peek_next()
-        {
-            let name = t.clone();
-            self.advance();
-            self.advance();
-            self.var_declaration(name)
+    fn statement(&mut self) -> Result<Stmt, CarlaeError> {
+        if self.current_matches(&[TokenKind::If, TokenKind::While]) {
+            self.compound_statement()
         } else {
-            self.statement()
-        };
-
-        match stmt {
-            Ok(s) => Ok(Some(s)),
-            Err(_) => match self.synchronize() {
-                Ok(_) => Ok(None),
-                Err(e) => Err(e),
-            },
+            self.simple_statement()
         }
     }
 
-    fn var_declaration(&mut self, name: Token) -> Result<Stmt, CarlaeError> {
+    fn compound_statement(&mut self) -> Result<Stmt, CarlaeError> {
+        if let Some(t) = self.peek() {
+            let line = t.line;
+            let stmt = match &t.kind {
+                TokenKind::If => todo!(),
+                TokenKind::While => todo!(),
+                _ => self.expression_stmt(line)?,
+            };
+            Ok(stmt)
+        } else {
+            let prev = self.previous();
+            Err(CarlaeError::Parsing(format!(
+                "[Line {}] Expected token after {:?}",
+                prev.line, prev.kind
+            )))
+        }
+    }
+
+    fn simple_statement(&mut self) -> Result<Stmt, CarlaeError> {
+        if let Some(t) = self.peek() {
+            // A variable assignment is a identifier followed by `=`
+            let stmt = if matches!(t.kind, TokenKind::Identifier(_))
+                && self.next_matches(&[TokenKind::Equal])
+            {
+                let name = t.clone();
+                self.advance();
+                self.advance();
+                self.assignment_statement(name)?
+            } else {
+                let line = t.line;
+                match &t.kind {
+                    TokenKind::Print => {
+                        self.advance();
+                        self.print_stmt(line)?
+                    }
+                    _ => self.expression_stmt(line)?,
+                }
+            };
+            Ok(stmt)
+        } else {
+            let prev = self.previous();
+            Err(CarlaeError::Parsing(format!(
+                "[Line {}] Expected token after {:?}",
+                prev.line, prev.kind
+            )))
+        }
+    }
+
+    fn assignment_statement(&mut self, name: Token) -> Result<Stmt, CarlaeError> {
         let initializer = self.expression()?;
 
         if self.current_matches(&[TokenKind::Newline]) {
@@ -72,26 +100,6 @@ impl Parser {
             Err(CarlaeError::Parsing(format!(
                 "[Line {}]: Invalid syntax for variable declaration",
                 name.line
-            )))
-        }
-    }
-
-    fn statement(&mut self) -> Result<Stmt, CarlaeError> {
-        if let Some(t) = self.peek() {
-            let stmt = match &t.kind {
-                TokenKind::Print => {
-                    let line = t.line;
-                    self.advance();
-                    self.print_stmt(line)?
-                }
-                _ => self.expression_stmt(t.line)?,
-            };
-            Ok(stmt)
-        } else {
-            let prev = self.previous();
-            Err(CarlaeError::Parsing(format!(
-                "[Line {}] Expected token after {:?}",
-                prev.line, prev.kind
             )))
         }
     }
@@ -267,6 +275,10 @@ impl Parser {
 
     fn current_matches(&self, kinds: &[TokenKind]) -> bool {
         self.peek().is_some_and(|t| kinds.contains(&t.kind))
+    }
+
+    fn next_matches(&self, kinds: &[TokenKind]) -> bool {
+        self.peek_next().is_some_and(|t| kinds.contains(&t.kind))
     }
 
     fn advance(&mut self) {
