@@ -13,12 +13,8 @@ impl std::fmt::Display for Stmt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Expression(expr) => write!(f, "{expr}"),
-            Self::If(IfClause {
-                condition,
-                then,
-                r#else,
-            }) => {
-                writeln!(f, "if {condition}:")?;
+            Self::If(IfClause { cond, then, r#else }) => {
+                writeln!(f, "if {cond}:")?;
                 for stmt in then.iter() {
                     writeln!(f, "    {stmt}")?;
                 }
@@ -53,7 +49,7 @@ impl std::fmt::Display for Stmt {
 
 #[derive(Debug, PartialEq)]
 pub struct IfClause {
-    pub condition: Expr,
+    pub cond: Expr,
     pub then: Vec<Stmt>,
     pub r#else: Option<Vec<Stmt>>,
 }
@@ -85,7 +81,7 @@ mod tests {
     #[test]
     fn if_statement_displays_else_branch() {
         let if_stmt = Stmt::If(IfClause {
-            condition: Expr::Binary {
+            cond: Expr::Binary {
                 left: Box::new(Expr::Variable(Token::new(
                     TokenKind::Identifier("x".into()),
                     "x".into(),
