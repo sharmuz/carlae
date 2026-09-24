@@ -5,6 +5,7 @@ use crate::token::Token;
 pub enum Stmt {
     Expression(Expr),
     If(IfClause),
+    While(WhileClause),
     Print(PrintConfig),
     Variable(Assignment),
 }
@@ -23,6 +24,13 @@ impl std::fmt::Display for Stmt {
                     for stmt in stmts.iter() {
                         writeln!(f, "    {stmt}")?;
                     }
+                };
+                Ok(())
+            }
+            Self::While(WhileClause { cond, body }) => {
+                writeln!(f, "while {cond}:")?;
+                for stmt in body.iter() {
+                    writeln!(f, "    {stmt}")?;
                 };
                 Ok(())
             }
@@ -52,6 +60,12 @@ pub struct IfClause {
     pub cond: Expr,
     pub then: Vec<Stmt>,
     pub r#else: Option<Vec<Stmt>>,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct WhileClause {
+    pub cond: Expr,
+    pub body: Vec<Stmt>,
 }
 
 #[derive(Debug, PartialEq)]

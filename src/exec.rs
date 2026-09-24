@@ -1,6 +1,6 @@
 use crate::error::CarlaeError;
 use crate::interpreter::Interpreter;
-use crate::stmt::{Assignment, IfClause, PrintConfig, PrintMode, Stmt};
+use crate::stmt::{Assignment, IfClause, PrintConfig, PrintMode, Stmt, WhileClause};
 
 impl Interpreter {
     pub fn execute(&mut self, stmt: &Stmt) -> Result<(), CarlaeError> {
@@ -21,6 +21,14 @@ impl Interpreter {
                 }
                 Ok(())
             },
+            Stmt::While(WhileClause { cond, body }) => {
+                while self.evaluate(cond)?.is_truthy() {
+                    for stmt in body.iter() {
+                        self.execute(stmt)?;
+                    }
+                }
+                Ok(())
+            }
             Stmt::Print(PrintConfig { exprs, mode }) => {
                 if let Some(e) = exprs.first() {
                     print!("{}", self.evaluate(e)?)

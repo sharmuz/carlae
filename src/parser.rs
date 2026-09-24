@@ -1,6 +1,6 @@
 use crate::error::CarlaeError;
 use crate::expr::{Expr, LiteralValue};
-use crate::stmt::{Assignment, IfClause, PrintConfig, PrintMode, Stmt};
+use crate::stmt::{Assignment, IfClause, PrintConfig, PrintMode, Stmt, WhileClause};
 use crate::token::{Token, TokenKind};
 
 type ParserRule = fn(&mut Parser) -> Result<Expr, CarlaeError>;
@@ -50,7 +50,10 @@ impl Parser {
                     self.advance();
                     self.if_stmt(line)?
                 }
-                TokenKind::While => todo!(),
+                TokenKind::While => {
+                    self.advance();
+                    self.while_stmt(line)?
+                }
                 _ => self.expression_stmt(line)?,
             };
             Ok(stmt)
@@ -86,6 +89,19 @@ impl Parser {
         }
 
         Ok(Stmt::If(IfClause { cond, then, r#else }))
+    }
+
+    fn while_stmt(&mut self, line: usize) -> Result<Stmt, CarlaeError> {
+        let cond = self.expression()?;
+        if !self.current_matches(&[TokenKind::Colon]) {
+            return Err(CarlaeError::Parsing(format!(
+                "[Line {line}] While statement missing `:` after condition",
+            )));
+        };
+        self.advance();
+        let body = self.suite()?;
+
+        Ok(Stmt::While(WhileClause { cond, body }))
     }
 
     fn suite(&mut self) -> Result<Vec<Stmt>, CarlaeError> {
