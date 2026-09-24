@@ -1,6 +1,6 @@
 use crate::error::CarlaeError;
 use crate::expr::{Expr, LiteralValue};
-use crate::stmt::{Assignment, PrintConfig, PrintMode, Stmt};
+use crate::stmt::{Assignment, IfClause, PrintConfig, PrintMode, Stmt};
 use crate::token::{Token, TokenKind};
 
 type ParserRule = fn(&mut Parser) -> Result<Expr, CarlaeError>;
@@ -46,7 +46,10 @@ impl Parser {
         if let Some(t) = self.peek() {
             let line = t.line;
             let stmt = match &t.kind {
-                TokenKind::If => todo!(),
+                TokenKind::If => {
+                    self.advance();
+                    self.if_stmt(line)?
+                }
                 TokenKind::While => todo!(),
                 _ => self.expression_stmt(line)?,
             };
@@ -58,6 +61,51 @@ impl Parser {
                 prev.line, prev.kind
             )))
         }
+    }
+
+    fn if_stmt(&mut self, line: usize) -> Result<Stmt, CarlaeError> {
+        let cond = self.expression()?;
+        if !self.current_matches(&[TokenKind::Colon]) {
+            return Err(CarlaeError::Parsing(format!(
+                "[Line {line}] If statement missing `:` after condition",
+            )));
+        };
+        self.advance();
+        let then = self.suite()?;
+
+        let mut r#else = None;
+        if self.current_matches(&[TokenKind::Else]) {
+            self.advance();
+            if !self.current_matches(&[TokenKind::Colon]) {
+                return Err(CarlaeError::Parsing(format!(
+                    "[Line {line}] If statement missing `:` after else",
+                )));
+            };
+            self.advance();
+            r#else = Some(self.suite()?);
+        }
+
+        Ok(Stmt::If(IfClause { cond, then, r#else }))
+    }
+
+    fn suite(&mut self) -> Result<Vec<Stmt>, CarlaeError> {
+        let mut stmts = Vec::new();
+        // We have two possibilities:
+        // a) NEWLINE INDENT (statement NEWLINE)+ DEDENT
+        // b) simple_statement NEWLINE
+        // DELIBERATELY NOT SUPPORTING SEMICOLONS
+        if self.current_matches(&[TokenKind::Newline]) && self.next_matches(&[TokenKind::Indent]) {
+            self.advance();
+            self.advance();
+            while !self.current_matches(&[TokenKind::Dedent]) {
+                stmts.push(self.statement()?);
+            }
+            self.advance();
+        } else {
+            stmts.push(self.simple_statement()?);
+        }
+
+        Ok(stmts)
     }
 
     fn simple_statement(&mut self) -> Result<Stmt, CarlaeError> {
