@@ -1,6 +1,6 @@
 use crate::error::CarlaeError;
 use crate::interpreter::Interpreter;
-use crate::stmt::{Assignment, PrintConfig, PrintMode, Stmt};
+use crate::stmt::{Assignment, IfClause, PrintConfig, PrintMode, Stmt};
 
 impl Interpreter {
     pub fn execute(&mut self, stmt: &Stmt) -> Result<(), CarlaeError> {
@@ -9,7 +9,18 @@ impl Interpreter {
                 self.evaluate(expr)?;
                 Ok(())
             }
-            Stmt::If(_) => todo!(),
+            Stmt::If(IfClause { cond, then, r#else }) => {
+                if self.evaluate(cond)?.is_truthy() {
+                    for stmt in then.iter() {
+                        self.execute(stmt)?;
+                    }
+                } else if let Some(else_stmts) = r#else {
+                    for stmt in else_stmts.iter() {
+                        self.execute(stmt)?;
+                    }
+                }
+                Ok(())
+            },
             Stmt::Print(PrintConfig { exprs, mode }) => {
                 if let Some(e) = exprs.first() {
                     print!("{}", self.evaluate(e)?)
