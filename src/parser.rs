@@ -209,7 +209,15 @@ impl Parser {
     }
 
     fn expression(&mut self) -> Result<Expr, CarlaeError> {
-        self.not()
+        self.or()
+    }
+
+    fn or(&mut self) -> Result<Expr, CarlaeError> {
+        self.binary(Self::and, &[TokenKind::Or])
+    }
+
+    fn and(&mut self) -> Result<Expr, CarlaeError> {
+        self.binary(Self::not, &[TokenKind::And])
     }
 
     fn not(&mut self) -> Result<Expr, CarlaeError> {
@@ -266,10 +274,19 @@ impl Parser {
             self.advance();
             let operator = self.previous().clone();
             let right = operand_rule(self)?;
-            expr = Expr::Binary {
-                left: Box::new(expr),
-                operator,
-                right: Box::new(right),
+
+            expr = if matches!(operator.kind, TokenKind::Or | TokenKind::And) {
+                Expr::Logical {
+                    left: Box::new(expr),
+                    operator,
+                    right: Box::new(right),
+                }
+            } else {
+                Expr::Binary {
+                    left: Box::new(expr),
+                    operator,
+                    right: Box::new(right),
+                }
             };
         }
 
@@ -594,6 +611,50 @@ mod tests {
             .expect("Tokens successfully parsed into statements");
 
         assert_eq!(program, vec![Stmt::Expression(expected)])
+    }
+
+    #[test]
+    fn parses_or_as_logical() {
+        let mut parser = Parser::new(vec![
+            Token::new(TokenKind::True, "True".into(), 1),
+            Token::new(TokenKind::Or, "or".into(), 1),
+            Token::new(TokenKind::False, "False".into(), 1),
+            Token::new(TokenKind::Newline, "\n".into(), 1),
+            Token::new(TokenKind::Eof, "".into(), 2),
+        ]);
+        let expected = Expr::Logical {
+            left: Box::new(Expr::Literal(LiteralValue::Boolean(true))),
+            operator: Token::new(TokenKind::Or, "or".into(), 1),
+            right: Box::new(Expr::Literal(LiteralValue::Boolean(false))),
+        };
+
+        let expr = parser
+            .expression()
+            .expect("Tokens successfully parsed into Expr");
+
+        assert_eq!(expr, expected);
+    }
+
+    #[test]
+    fn parses_plus_as_binary() {
+        let mut parser = Parser::new(vec![
+            Token::new(TokenKind::Number(1.0), "1".into(), 1),
+            Token::new(TokenKind::Plus, "+".into(), 1),
+            Token::new(TokenKind::Number(2.0), "2".into(), 1),
+            Token::new(TokenKind::Newline, "\n".into(), 1),
+            Token::new(TokenKind::Eof, "".into(), 2),
+        ]);
+        let expected = Expr::Binary {
+            left: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
+            operator: Token::new(TokenKind::Plus, "+".into(), 1),
+            right: Box::new(Expr::Literal(LiteralValue::Number(2.0))),
+        };
+
+        let expr = parser
+            .expression()
+            .expect("Tokens successfully parsed into Expr");
+
+        assert_eq!(expr, expected);
     }
 
     #[test]

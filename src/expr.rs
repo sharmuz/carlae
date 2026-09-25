@@ -12,6 +12,11 @@ pub enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
+    Logical {
+        left: Box<Expr>,
+        operator: Token,
+        right: Box<Expr>,
+    },
     Grouping(Box<Expr>),
     Variable(Token),
 }
@@ -22,6 +27,11 @@ impl std::fmt::Display for Expr {
             Self::Literal(lit) => write!(f, "{lit}"),
             Self::Unary { operator, right } => write!(f, "({} {})", operator.lexeme, right),
             Self::Binary {
+                operator,
+                left,
+                right,
+            }
+            | Self::Logical {
                 operator,
                 left,
                 right,

@@ -13,6 +13,11 @@ impl Interpreter {
                 operator,
                 right,
             } => self.eval_binary(left, operator, right),
+            Expr::Logical {
+                left,
+                operator,
+                right,
+            } => self.eval_logical(left, operator, right),
             Expr::Grouping(e) => self.evaluate(e),
             Expr::Variable(t) => self.env.get(t).cloned(),
         }
@@ -266,6 +271,36 @@ impl Interpreter {
             ))),
         }
     }
+
+    fn eval_logical(
+        &self,
+        left: &Expr,
+        operator: &Token,
+        right: &Expr,
+    ) -> Result<LiteralValue, CarlaeError> {
+        let left = self.evaluate(left)?;
+
+        match &operator.kind {
+            TokenKind::Or => {
+                if left.is_truthy() {
+                    Ok(left)
+                } else {
+                    Ok(self.evaluate(right)?)
+                }
+            }
+            TokenKind::And => {
+                if !left.is_truthy() {
+                    Ok(left)
+                } else {
+                    Ok(self.evaluate(right)?)
+                }
+            }
+            k => Err(CarlaeError::Evaluation(format!(
+                "[Line {}]: Invalid logical operator: {k:?}",
+                operator.line
+            ))),
+        }
+    }
 }
 
 impl LiteralValue {
@@ -315,6 +350,14 @@ mod tests {
 
     fn binary(left: Expr, kind: TokenKind, lexeme: &str, right: Expr) -> Expr {
         Expr::Binary {
+            left: Box::new(left),
+            operator: Token::new(kind, lexeme.into(), 1),
+            right: Box::new(right),
+        }
+    }
+
+    fn logical(left: Expr, kind: TokenKind, lexeme: &str, right: Expr) -> Expr {
+        Expr::Logical {
             left: Box::new(left),
             operator: Token::new(kind, lexeme.into(), 1),
             right: Box::new(right),
@@ -481,6 +524,50 @@ mod tests {
             unary(TokenKind::Not, "not", string("hello")),
         );
         let expected = LiteralValue::Boolean(true);
+
+        let eval = itpr.evaluate(&expr).expect("Expression is evaluated");
+
+        assert_eq!(eval, expected);
+    }
+
+    #[test]
+    fn or_returns_left_when_both_operands_are_truthy() {
+        let itpr = Interpreter::new();
+        let expr = logical(string("cat"), TokenKind::Or, "or", number(1.0));
+        let expected = LiteralValue::String("cat".into());
+
+        let eval = itpr.evaluate(&expr).expect("Expression is evaluated");
+
+        assert_eq!(eval, expected);
+    }
+
+    #[test]
+    fn or_returns_right_when_both_operands_are_falsey() {
+        let itpr = Interpreter::new();
+        let expr = logical(string(""), TokenKind::Or, "or", number(0.0));
+        let expected = LiteralValue::Number(0.0);
+
+        let eval = itpr.evaluate(&expr).expect("Expression is evaluated");
+
+        assert_eq!(eval, expected);
+    }
+
+    #[test]
+    fn and_returns_left_when_left_is_falsey() {
+        let itpr = Interpreter::new();
+        let expr = logical(number(0.0), TokenKind::And, "and", string("cat"));
+        let expected = LiteralValue::Number(0.0);
+
+        let eval = itpr.evaluate(&expr).expect("Expression is evaluated");
+
+        assert_eq!(eval, expected);
+    }
+
+    #[test]
+    fn and_returns_right_when_both_operands_are_truthy() {
+        let itpr = Interpreter::new();
+        let expr = logical(string("cat"), TokenKind::And, "and", number(1.0));
+        let expected = LiteralValue::Number(1.0);
 
         let eval = itpr.evaluate(&expr).expect("Expression is evaluated");
 
