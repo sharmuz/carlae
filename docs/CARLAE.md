@@ -12,6 +12,8 @@ Items crossed out are not supported but may be added in future.
 - string
 - bool
 - None
+- ~~list~~
+- ~~dict~~
 
 ## Expressions
 
@@ -29,13 +31,13 @@ Items crossed out are not supported but may be added in future.
 - if else
 - while
 - ~~for~~
-- assignment op =
+- assignment =
 
 ## Functions
 
-- ~~print (built-in)~~
 - def
 - ~~closures~~
+- ~~print (built-in)~~
 
 ## Memory management
 
@@ -44,3 +46,4 @@ Items crossed out are not supported but may be added in future.
 ## Other
 
 - Comments
+- ~~classes~~
