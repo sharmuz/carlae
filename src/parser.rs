@@ -229,14 +229,14 @@ impl Parser {
     }
 
     fn equality(&mut self) -> Result<Expr, CarlaeError> {
-        self.parse_binary_operator(
+        self.binary(
             Self::comparison,
             &[TokenKind::BangEqual, TokenKind::EqualEqual],
         )
     }
 
     fn comparison(&mut self) -> Result<Expr, CarlaeError> {
-        self.parse_binary_operator(
+        self.binary(
             Self::term,
             &[
                 TokenKind::Greater,
@@ -248,14 +248,14 @@ impl Parser {
     }
 
     fn term(&mut self) -> Result<Expr, CarlaeError> {
-        self.parse_binary_operator(Self::factor, &[TokenKind::Minus, TokenKind::Plus])
+        self.binary(Self::factor, &[TokenKind::Minus, TokenKind::Plus])
     }
 
     fn factor(&mut self) -> Result<Expr, CarlaeError> {
-        self.parse_binary_operator(Self::unary, &[TokenKind::Slash, TokenKind::Star])
+        self.binary(Self::unary, &[TokenKind::Slash, TokenKind::Star])
     }
 
-    fn parse_binary_operator(
+    fn binary(
         &mut self,
         operand_rule: ParserRule,
         operators: &[TokenKind],
