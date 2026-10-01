@@ -1,6 +1,7 @@
+use crate::callable::CarlaeFunction;
 use crate::token::Token;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Expr {
     Literal(LiteralValue),
     Unary {
@@ -43,13 +44,13 @@ impl std::fmt::Display for Expr {
             } => write!(f, "({} {} {})", operator.lexeme, left, right),
             Self::Grouping(expr) => write!(f, "(group {expr})"),
             Self::Variable(t) => write!(f, "{}", t.lexeme),
-            Self::Call { callee, args, ..} => {
-                write!(f, "{callee}(");
+            Self::Call { callee, args, .. } => {
+                write!(f, "{callee}(")?;
                 let mut xs = args.iter();
                 if let Some(x) = xs.next() {
-                    write!(f, "{x}");
+                    write!(f, "{x}")?;
                     for y in xs {
-                        write!(f, ", {y}");
+                        write!(f, ", {y}")?;
                     }
                 };
                 write!(f, ")")
@@ -63,6 +64,7 @@ pub enum LiteralValue {
     Number(f64),
     Boolean(bool),
     String(String),
+    Function(CarlaeFunction),
     None,
 }
 
@@ -73,6 +75,7 @@ impl std::fmt::Display for LiteralValue {
             Self::Boolean(true) => write!(f, "True"),
             Self::Boolean(false) => write!(f, "False"),
             Self::String(s) => write!(f, "{s}"),
+            Self::Function(g) => write!(f, "{}", g.name),
             Self::None => write!(f, "None"),
         }
     }

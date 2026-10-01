@@ -9,6 +9,7 @@ use crate::interpreter::Interpreter;
 use crate::parser::Parser;
 use crate::scanner::Scanner;
 
+mod callable;
 mod environment;
 mod error;
 mod eval;

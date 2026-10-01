@@ -1,7 +1,7 @@
 use crate::expr::Expr;
 use crate::token::Token;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Stmt {
     Expression(Expr),
     If(IfClause),
@@ -31,7 +31,7 @@ impl std::fmt::Display for Stmt {
                 writeln!(f, "while {cond}:")?;
                 for stmt in body.iter() {
                     writeln!(f, "    {stmt}")?;
-                };
+                }
                 Ok(())
             }
             Self::Print(PrintConfig { exprs, mode }) => {
@@ -55,32 +55,32 @@ impl std::fmt::Display for Stmt {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct IfClause {
     pub cond: Expr,
     pub then: Vec<Stmt>,
     pub r#else: Option<Vec<Stmt>>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct WhileClause {
     pub cond: Expr,
     pub body: Vec<Stmt>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct PrintConfig {
     pub exprs: Vec<Expr>,
     pub mode: PrintMode,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum PrintMode {
     FinalNewline,
     NoNewline,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Assignment {
     pub name: Token,
     pub initializer: Expr,

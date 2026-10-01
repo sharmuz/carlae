@@ -311,6 +311,10 @@ impl LiteralValue {
             Self::String(s) => Err(CarlaeError::Evaluation(format!(
                 "Cannot convert String to f64: {s}"
             ))),
+            Self::Function(f) => Err(CarlaeError::Evaluation(format!(
+                "Cannot convert function to f64: {}",
+                f.name
+            ))),
             Self::None => Err(CarlaeError::Evaluation("Cannot convert None to f64".into())),
         }
     }
@@ -320,6 +324,7 @@ impl LiteralValue {
             Self::Boolean(b) => *b,
             Self::Number(n) => *n != 0.0,
             Self::String(s) => !s.is_empty(),
+            Self::Function(_) => false,
             Self::None => false,
         }
     }
