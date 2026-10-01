@@ -4,11 +4,11 @@ use crate::interpreter::Interpreter;
 use crate::stmt::Stmt;
 use crate::token::Token;
 
-trait Callable {
+pub trait Callable {
     fn call(
         &self,
         args: Vec<LiteralValue>,
-        interpreter: &mut Interpreter,
+        interpreter: &Interpreter,
     ) -> Result<LiteralValue, CarlaeError>;
 }
 
@@ -23,7 +23,7 @@ impl Callable for CarlaeFunction {
     fn call(
         &self,
         args: Vec<LiteralValue>,
-        interpreter: &mut Interpreter,
+        interpreter: &Interpreter,
     ) -> Result<LiteralValue, CarlaeError> {
         todo!()
     }

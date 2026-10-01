@@ -1,3 +1,4 @@
+use crate::callable::Callable;
 use crate::error::CarlaeError;
 use crate::expr::{Expr, LiteralValue};
 use crate::interpreter::Interpreter;
@@ -20,6 +21,11 @@ impl Interpreter {
             } => self.eval_logical(left, operator, right),
             Expr::Grouping(e) => self.evaluate(e),
             Expr::Variable(t) => self.env.get(t).cloned(),
+            Expr::Call {
+                callee,
+                args,
+                paren,
+            } => self.eval_call(callee, args, paren),
         }
     }
 
@@ -299,6 +305,28 @@ impl Interpreter {
                 "[Line {}]: Invalid logical operator: {k:?}",
                 operator.line
             ))),
+        }
+    }
+
+    fn eval_call(
+        &self,
+        callee: &Expr,
+        args: &[Expr],
+        paren: &Token,
+    ) -> Result<LiteralValue, CarlaeError> {
+        let callee = self.evaluate(callee)?;
+        let args = args
+            .iter()
+            .map(|a| self.evaluate(a))
+            .collect::<Result<Vec<LiteralValue>, CarlaeError>>()?;
+
+        if let LiteralValue::Function(f) = callee {
+            f.call(args, self)
+        } else {
+            Err(CarlaeError::Evaluation(format!(
+                "[Line {}] `{}` is not callable",
+                paren.line, callee
+            )))
         }
     }
 }
