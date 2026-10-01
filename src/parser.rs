@@ -303,10 +303,52 @@ impl Parser {
                 right: Box::new(right),
             }
         } else {
-            self.primary()?
+            self.call()?
         };
 
         Ok(expr)
+    }
+
+    fn call(&mut self) -> Result<Expr, CarlaeError> {
+        let mut expr = self.primary()?;
+
+        loop {
+            if self.current_matches(&[TokenKind::LeftParen]) {
+                self.advance();
+                expr = self.finish_call(expr)?;
+            } else {
+                break;
+            }
+        }
+
+        Ok(expr)
+    }
+
+    fn finish_call(&mut self, callee: Expr) -> Result<Expr, CarlaeError> {
+        let mut args = Vec::new();
+
+        if !self.current_matches(&[TokenKind::RightParen]) {
+            args.push(self.expression()?);
+            while self.current_matches(&[TokenKind::Comma]) {
+                self.advance();
+                args.push(self.expression()?);
+            }
+        };
+        self.advance();
+        let paren = self.previous();
+
+        if !matches!(paren.kind, TokenKind::RightParen) {
+            Err(CarlaeError::Parsing(format!(
+                "[Line {}] Missing `)` after function arguments",
+                paren.line
+            )))
+        } else {
+            Ok(Expr::Call {
+                callee: Box::new(callee),
+                args,
+                paren: paren.clone(),
+            })
+        }
     }
 
     fn primary(&mut self) -> Result<Expr, CarlaeError> {

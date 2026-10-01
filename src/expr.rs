@@ -19,6 +19,11 @@ pub enum Expr {
     },
     Grouping(Box<Expr>),
     Variable(Token),
+    Call {
+        callee: Box<Expr>,
+        args: Vec<Expr>,
+        paren: Token,
+    },
 }
 
 impl std::fmt::Display for Expr {
@@ -38,6 +43,17 @@ impl std::fmt::Display for Expr {
             } => write!(f, "({} {} {})", operator.lexeme, left, right),
             Self::Grouping(expr) => write!(f, "(group {expr})"),
             Self::Variable(t) => write!(f, "{}", t.lexeme),
+            Self::Call { callee, args, ..} => {
+                write!(f, "{callee}(");
+                let mut xs = args.iter();
+                if let Some(x) = xs.next() {
+                    write!(f, "{x}");
+                    for y in xs {
+                        write!(f, ", {y}");
+                    }
+                };
+                write!(f, ")")
+            }
         }
     }
 }
