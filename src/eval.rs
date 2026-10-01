@@ -359,7 +359,7 @@ impl LiteralValue {
             Self::Boolean(b) => *b,
             Self::Number(n) => *n != 0.0,
             Self::String(s) => !s.is_empty(),
-            Self::Function(_) => false,
+            Self::Function(_) => true,
             Self::None => false,
         }
     }
