@@ -321,7 +321,14 @@ impl Interpreter {
             .collect::<Result<Vec<LiteralValue>, CarlaeError>>()?;
 
         if let LiteralValue::Function(f) = callee {
-            f.call(args, self)
+            if args.len() == f.arity() {
+                f.call(args, self)
+            } else {
+                Err(CarlaeError::Evaluation(format!(
+                    "[Line {}] Function expected {} args but received {}",
+                    paren.line, f.arity(), args.len()
+                )))
+            }
         } else {
             Err(CarlaeError::Evaluation(format!(
                 "[Line {}] `{}` is not callable",

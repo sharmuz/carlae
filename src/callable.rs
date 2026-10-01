@@ -10,6 +10,8 @@ pub trait Callable {
         args: Vec<LiteralValue>,
         interpreter: &Interpreter,
     ) -> Result<LiteralValue, CarlaeError>;
+
+    fn arity(&self) -> usize;
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -26,5 +28,9 @@ impl Callable for CarlaeFunction {
         interpreter: &Interpreter,
     ) -> Result<LiteralValue, CarlaeError> {
         todo!()
+    }
+
+    fn arity(&self) -> usize {
+        self.params.len()
     }
 }
