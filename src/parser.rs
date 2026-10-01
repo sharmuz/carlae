@@ -328,15 +328,17 @@ impl Parser {
         let mut args = Vec::new();
 
         if !self.current_matches(&[TokenKind::RightParen]) {
-            if args.len() > 255 {
-                return Err(CarlaeError::Parsing(format!(
-                    "[Line {}] Exceeded limit of 255 function arguments",
-                    self.previous().line
-                )));
-            }
             args.push(self.expression()?);
+
             while self.current_matches(&[TokenKind::Comma]) {
                 self.advance();
+
+                if args.len() >= 255 {
+                    return Err(CarlaeError::Parsing(format!(
+                        "[Line {}] Exceeded limit of 255 function arguments",
+                        self.previous().line
+                    )));
+                }
                 args.push(self.expression()?);
             }
         };
