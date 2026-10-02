@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use crate::builtins::Clock;
 use crate::environment::Environment;
 use crate::error::CarlaeError;
 use crate::stmt::Stmt;
@@ -14,6 +15,13 @@ impl Interpreter {
     pub fn new() -> Self {
         let globals = Rc::new(RefCell::new(Environment::new()));
         let env = globals.clone();
+
+        globals.borrow_mut().bind(
+            "clock".into(),
+            crate::expr::LiteralValue::Function(Rc::new(Clock {
+                name: "clock".into(),
+            })),
+        );
 
         Interpreter { globals, env }
     }
