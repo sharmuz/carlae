@@ -1,10 +1,12 @@
+use std::fmt::Debug;
+
 use crate::error::CarlaeError;
 use crate::expr::LiteralValue;
 use crate::interpreter::Interpreter;
 use crate::stmt::Stmt;
 use crate::token::Token;
 
-pub trait Callable {
+pub trait Callable: Debug {
     fn call(
         &self,
         args: Vec<LiteralValue>,
@@ -12,9 +14,11 @@ pub trait Callable {
     ) -> Result<LiteralValue, CarlaeError>;
 
     fn arity(&self) -> usize;
+
+    fn name(&self) -> &str;
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct CarlaeFunction {
     pub name: Token,
     pub params: Vec<Token>,
@@ -32,5 +36,9 @@ impl Callable for CarlaeFunction {
 
     fn arity(&self) -> usize {
         self.params.len()
+    }
+
+    fn name(&self) -> &str {
+        &self.name.lexeme
     }
 }

@@ -1,4 +1,3 @@
-use crate::callable::Callable;
 use crate::error::CarlaeError;
 use crate::expr::{Expr, LiteralValue};
 use crate::interpreter::Interpreter;
@@ -350,7 +349,7 @@ impl LiteralValue {
             ))),
             Self::Function(f) => Err(CarlaeError::Evaluation(format!(
                 "Cannot convert function to f64: {}",
-                f.name
+                f.name()
             ))),
             Self::None => Err(CarlaeError::Evaluation("Cannot convert None to f64".into())),
         }

@@ -1,4 +1,6 @@
-use crate::callable::CarlaeFunction;
+use std::rc::Rc;
+
+use crate::callable::Callable;
 use crate::token::Token;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -59,12 +61,12 @@ impl std::fmt::Display for Expr {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum LiteralValue {
     Number(f64),
     Boolean(bool),
     String(String),
-    Function(CarlaeFunction),
+    Function(Rc<dyn Callable>),
     None,
 }
 
@@ -75,8 +77,21 @@ impl std::fmt::Display for LiteralValue {
             Self::Boolean(true) => write!(f, "True"),
             Self::Boolean(false) => write!(f, "False"),
             Self::String(s) => write!(f, "{s}"),
-            Self::Function(g) => write!(f, "{}", g.name),
+            Self::Function(g) => write!(f, "{}", g.name()),
             Self::None => write!(f, "None"),
+        }
+    }
+}
+
+impl PartialEq for LiteralValue {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Number(x), Self::Number(y)) => x == y,
+            (Self::Boolean(p), Self::Boolean(q)) => p == q,
+            (Self::String(s), Self::String(t)) => s == t,
+            (Self::Function(f), Self::Function(g)) => Rc::ptr_eq(f, g),
+            (Self::None, Self::None) => true,
+            (_, _) => false,
         }
     }
 }
