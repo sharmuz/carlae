@@ -20,7 +20,7 @@ impl Interpreter {
                 right,
             } => self.eval_logical(left, operator, right),
             Expr::Grouping(e) => self.evaluate(e),
-            Expr::Variable(t) => self.env.get(t).cloned(),
+            Expr::Variable(t) => self.env.borrow().get(t).cloned(),
             Expr::Call {
                 callee,
                 args,
@@ -326,7 +326,9 @@ impl Interpreter {
             } else {
                 Err(CarlaeError::Evaluation(format!(
                     "[Line {}] Function expected {} args but received {}",
-                    paren.line, f.arity(), args.len()
+                    paren.line,
+                    f.arity(),
+                    args.len()
                 )))
             }
         } else {

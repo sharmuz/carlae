@@ -4,6 +4,7 @@ use crate::error::CarlaeError;
 use crate::expr::LiteralValue;
 use crate::token::Token;
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct Environment {
     values: HashMap<String, LiteralValue>,
 }

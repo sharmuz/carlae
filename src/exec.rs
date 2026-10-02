@@ -20,7 +20,7 @@ impl Interpreter {
                     }
                 }
                 Ok(())
-            },
+            }
             Stmt::While(WhileClause { cond, body }) => {
                 while self.evaluate(cond)?.is_truthy() {
                     for stmt in body.iter() {
@@ -43,7 +43,7 @@ impl Interpreter {
             }
             Stmt::Variable(Assignment { name, initializer }) => {
                 let value = self.evaluate(initializer)?;
-                self.env.bind(name.lexeme.to_string(), value);
+                self.env.borrow_mut().bind(name.lexeme.to_string(), value);
                 Ok(())
             }
         }
