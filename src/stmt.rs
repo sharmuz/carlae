@@ -4,6 +4,7 @@ use crate::token::Token;
 #[derive(Clone, Debug, PartialEq)]
 pub enum Stmt {
     Expression(Expr),
+    Function(FuncDef),
     If(IfClause),
     While(WhileClause),
     Print(PrintConfig),
@@ -14,6 +15,17 @@ impl std::fmt::Display for Stmt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Expression(expr) => write!(f, "{expr}"),
+            Self::Function(FuncDef { name, params, .. }) => {
+                writeln!(f, "{}(", name.lexeme)?;
+                let mut ps = params.iter();
+                if let Some(p) = ps.next() {
+                    write!(f, "{}", p.lexeme)?;
+                }
+                for p in ps {
+                    write!(f, ", {}", p.lexeme)?;
+                }
+                write!(f, ")")
+            }
             Self::If(IfClause { cond, then, r#else }) => {
                 writeln!(f, "if {cond}:")?;
                 for stmt in then.iter() {
@@ -53,6 +65,13 @@ impl std::fmt::Display for Stmt {
             }
         }
     }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct FuncDef {
+    pub name: Token,
+    pub params: Vec<Token>,
+    pub body: Vec<Stmt>,
 }
 
 #[derive(Clone, Debug, PartialEq)]

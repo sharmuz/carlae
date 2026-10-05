@@ -1,6 +1,6 @@
 use crate::error::CarlaeError;
 use crate::expr::{Expr, LiteralValue};
-use crate::stmt::{Assignment, IfClause, PrintConfig, PrintMode, Stmt, WhileClause};
+use crate::stmt::{Assignment, FuncDef, IfClause, PrintConfig, PrintMode, Stmt, WhileClause};
 use crate::token::{Token, TokenKind};
 
 type ParserRule = fn(&mut Parser) -> Result<Expr, CarlaeError>;
@@ -22,8 +22,8 @@ impl Parser {
     fn program(&mut self) -> Result<Vec<Stmt>, CarlaeError> {
         let mut program: Vec<Stmt> = Vec::new();
         while !self.is_at_end() {
-            match self.statement() {
-                Ok(stmt) => program.push(stmt),
+            match self.declaration() {
+                Ok(decl) => program.push(decl),
                 Err(_) => match self.synchronize() {
                     Ok(_) => (),
                     Err(e) => return Err(e),
@@ -32,6 +32,91 @@ impl Parser {
         }
 
         Ok(program)
+    }
+
+    fn declaration(&mut self) -> Result<Stmt, CarlaeError> {
+        if self.current_matches(&[TokenKind::Def]) {
+            self.advance();
+            self.function()
+        } else {
+            self.statement()
+        }
+    }
+
+    fn function(&mut self) -> Result<Stmt, CarlaeError> {
+        let name = self.identifier()?;
+
+        if self.current_matches(&[TokenKind::LeftParen]) {
+            self.advance();
+        } else {
+            let prev = self.previous();
+            return Err(CarlaeError::Parsing(format!(
+                "[Line {}] Missing `(` after function name",
+                prev.line
+            )));
+        }
+
+        let mut params: Vec<Token> = Vec::new();
+        if !self.current_matches(&[TokenKind::RightParen]) {
+            params.push(self.identifier()?);
+
+            while self.current_matches(&[TokenKind::Comma]) {
+                self.advance();
+
+                if params.len() >= 255 {
+                    return Err(CarlaeError::Parsing(format!(
+                        "[Line {}] Exceeded limit of 255 function parameters",
+                        self.previous().line
+                    )));
+                }
+                params.push(self.identifier()?);
+            }
+        };
+
+        if self.current_matches(&[TokenKind::RightParen]) {
+            self.advance();
+        } else {
+            let prev = self.previous();
+            return Err(CarlaeError::Parsing(format!(
+                "[Line {}] Missing `)` after function parameters",
+                prev.line
+            )));
+        };
+
+        if self.current_matches(&[TokenKind::Colon]) {
+            self.advance();
+        } else {
+            let prev = self.previous();
+            return Err(CarlaeError::Parsing(format!(
+                "[Line {}] Missing `:` at end of function signature",
+                prev.line
+            )));
+        };
+
+        let body = self.suite()?;
+
+        Ok(Stmt::Function(FuncDef { name, params, body }))
+    }
+
+    fn identifier(&mut self) -> Result<Token, CarlaeError> {
+        if let Some(
+            id @ Token {
+                kind: TokenKind::Identifier(_),
+                lexeme: _,
+                line: _,
+            },
+        ) = self.peek()
+        {
+            let name = Ok(id.clone());
+            self.advance();
+            name
+        } else {
+            let prev = self.previous();
+            Err(CarlaeError::Parsing(format!(
+                "[Line {}] Missing identifier in function definition",
+                prev.line
+            )))
+        }
     }
 
     fn statement(&mut self) -> Result<Stmt, CarlaeError> {
