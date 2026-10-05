@@ -9,7 +9,7 @@ pub trait Callable: Debug {
     fn call(
         &self,
         args: Vec<LiteralValue>,
-        interpreter: &Interpreter,
+        interpreter: &mut Interpreter,
     ) -> Result<LiteralValue, CarlaeError>;
 
     fn arity(&self) -> usize;
@@ -26,7 +26,7 @@ impl Callable for CarlaeFunction {
     fn call(
         &self,
         args: Vec<LiteralValue>,
-        interpreter: &Interpreter,
+        interpreter: &mut Interpreter,
     ) -> Result<LiteralValue, CarlaeError> {
         todo!()
     }

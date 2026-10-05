@@ -4,7 +4,7 @@ use crate::interpreter::Interpreter;
 use crate::token::{Token, TokenKind};
 
 impl Interpreter {
-    pub fn evaluate(&self, expr: &Expr) -> Result<LiteralValue, CarlaeError> {
+    pub fn evaluate(&mut self, expr: &Expr) -> Result<LiteralValue, CarlaeError> {
         match expr {
             Expr::Literal(val) => Ok(val.clone()),
             Expr::Unary { operator, right } => self.eval_unary(operator, right),
@@ -28,7 +28,7 @@ impl Interpreter {
         }
     }
 
-    fn eval_unary(&self, operator: &Token, right: &Expr) -> Result<LiteralValue, CarlaeError> {
+    fn eval_unary(&mut self, operator: &Token, right: &Expr) -> Result<LiteralValue, CarlaeError> {
         let operand = self.evaluate(right)?;
 
         match (&operator.kind, operand) {
@@ -49,7 +49,7 @@ impl Interpreter {
     }
 
     fn eval_binary(
-        &self,
+        &mut self,
         left: &Expr,
         operator: &Token,
         right: &Expr,
@@ -278,7 +278,7 @@ impl Interpreter {
     }
 
     fn eval_logical(
-        &self,
+        &mut self,
         left: &Expr,
         operator: &Token,
         right: &Expr,
@@ -308,7 +308,7 @@ impl Interpreter {
     }
 
     fn eval_call(
-        &self,
+        &mut self,
         callee: &Expr,
         args: &[Expr],
         paren: &Token,
@@ -407,7 +407,7 @@ mod tests {
 
     #[test]
     fn evals_trivial_arithmetic() {
-        let itpr = Interpreter::new();
+        let mut itpr = Interpreter::new();
         let expr = Expr::Grouping(Box::new(binary(
             number(1.0),
             TokenKind::Plus,
@@ -423,7 +423,7 @@ mod tests {
 
     #[test]
     fn evals_number_arithmetic_with_all_binary_ops() {
-        let itpr = Interpreter::new();
+        let mut itpr = Interpreter::new();
         let expr = Expr::Grouping(Box::new(binary(
             binary(
                 binary(
@@ -449,7 +449,7 @@ mod tests {
 
     #[test]
     fn evals_arithmetic_with_numbers_and_bools() {
-        let itpr = Interpreter::new();
+        let mut itpr = Interpreter::new();
         let expr = Expr::Grouping(Box::new(binary(
             binary(
                 binary(
@@ -475,7 +475,7 @@ mod tests {
 
     #[test]
     fn evals_string_arithmetic() {
-        let itpr = Interpreter::new();
+        let mut itpr = Interpreter::new();
         let expr = Expr::Grouping(Box::new(binary(
             binary(
                 binary(
@@ -501,7 +501,7 @@ mod tests {
 
     #[test]
     fn evals_equality_between_numbers() {
-        let itpr = Interpreter::new();
+        let mut itpr = Interpreter::new();
         let expr = Expr::Grouping(Box::new(binary(
             binary(number(1.0), TokenKind::Plus, "+", number(2.0)),
             TokenKind::EqualEqual,
@@ -517,7 +517,7 @@ mod tests {
 
     #[test]
     fn evals_greater_than_between_strings() {
-        let itpr = Interpreter::new();
+        let mut itpr = Interpreter::new();
         let expr = Expr::Grouping(Box::new(binary(
             string("cat"),
             TokenKind::Greater,
@@ -533,7 +533,7 @@ mod tests {
 
     #[test]
     fn evals_not_per_truthiness() {
-        let itpr = Interpreter::new();
+        let mut itpr = Interpreter::new();
         let cases = [
             (boolean(true), LiteralValue::Boolean(false)),
             (boolean(false), LiteralValue::Boolean(true)),
@@ -558,7 +558,7 @@ mod tests {
 
     #[test]
     fn evals_repeated_not() {
-        let itpr = Interpreter::new();
+        let mut itpr = Interpreter::new();
         let expr = unary(
             TokenKind::Not,
             "not",
@@ -573,7 +573,7 @@ mod tests {
 
     #[test]
     fn or_returns_left_when_both_operands_are_truthy() {
-        let itpr = Interpreter::new();
+        let mut itpr = Interpreter::new();
         let expr = logical(string("cat"), TokenKind::Or, "or", number(1.0));
         let expected = LiteralValue::String("cat".into());
 
@@ -584,7 +584,7 @@ mod tests {
 
     #[test]
     fn or_returns_right_when_both_operands_are_falsey() {
-        let itpr = Interpreter::new();
+        let mut itpr = Interpreter::new();
         let expr = logical(string(""), TokenKind::Or, "or", number(0.0));
         let expected = LiteralValue::Number(0.0);
 
@@ -595,7 +595,7 @@ mod tests {
 
     #[test]
     fn and_returns_left_when_left_is_falsey() {
-        let itpr = Interpreter::new();
+        let mut itpr = Interpreter::new();
         let expr = logical(number(0.0), TokenKind::And, "and", string("cat"));
         let expected = LiteralValue::Number(0.0);
 
@@ -606,7 +606,7 @@ mod tests {
 
     #[test]
     fn and_returns_right_when_both_operands_are_truthy() {
-        let itpr = Interpreter::new();
+        let mut itpr = Interpreter::new();
         let expr = logical(string("cat"), TokenKind::And, "and", number(1.0));
         let expected = LiteralValue::Number(1.0);
 
@@ -617,7 +617,7 @@ mod tests {
 
     #[test]
     fn refuses_divide_by_zero() {
-        let itpr = Interpreter::new();
+        let mut itpr = Interpreter::new();
         let expr = Expr::Grouping(Box::new(binary(
             number(1.0),
             TokenKind::Slash,
@@ -637,7 +637,7 @@ mod tests {
 
     #[test]
     fn refuses_divide_by_false() {
-        let itpr = Interpreter::new();
+        let mut itpr = Interpreter::new();
         let expr = Expr::Grouping(Box::new(binary(
             number(1.0),
             TokenKind::Slash,
@@ -657,7 +657,7 @@ mod tests {
 
     #[test]
     fn refuses_string_multiplication_by_fraction() {
-        let itpr = Interpreter::new();
+        let mut itpr = Interpreter::new();
         let expr = Expr::Grouping(Box::new(binary(
             string("Carlae"),
             TokenKind::Star,

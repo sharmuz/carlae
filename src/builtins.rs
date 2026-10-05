@@ -1,6 +1,9 @@
 use std::time::{Duration, SystemTime};
 
-use crate::{callable::Callable, error::CarlaeError, expr::LiteralValue};
+use crate::callable::Callable;
+use crate::error::CarlaeError;
+use crate::expr::LiteralValue;
+use crate::interpreter::Interpreter;
 
 #[derive(Debug)]
 pub struct Clock {
@@ -11,7 +14,7 @@ impl Callable for Clock {
     fn call(
         &self,
         _args: Vec<crate::expr::LiteralValue>,
-        _interpreter: &crate::interpreter::Interpreter,
+        _interpreter: &mut Interpreter,
     ) -> Result<crate::expr::LiteralValue, crate::error::CarlaeError> {
         SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
