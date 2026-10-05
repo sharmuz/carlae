@@ -3,8 +3,7 @@ use std::fmt::Debug;
 use crate::error::CarlaeError;
 use crate::expr::LiteralValue;
 use crate::interpreter::Interpreter;
-use crate::stmt::Stmt;
-use crate::token::Token;
+use crate::stmt::FuncDef;
 
 pub trait Callable: Debug {
     fn call(
@@ -20,9 +19,7 @@ pub trait Callable: Debug {
 
 #[derive(Debug, PartialEq)]
 pub struct CarlaeFunction {
-    pub name: Token,
-    pub params: Vec<Token>,
-    pub body: Vec<Stmt>,
+    pub def: FuncDef,
 }
 
 impl Callable for CarlaeFunction {
@@ -35,10 +32,10 @@ impl Callable for CarlaeFunction {
     }
 
     fn arity(&self) -> usize {
-        self.params.len()
+        self.def.params.len()
     }
 
     fn name(&self) -> &str {
-        &self.name.lexeme
+        &self.def.name.lexeme
     }
 }
