@@ -48,6 +48,13 @@ impl Callable for CarlaeFunction {
         match res {
             // Implicitly returning None if no return stmt
             Ok(_) => Ok(LiteralValue::None),
+            Err(CarlaeError::Return(val)) => {
+                if let Some(v) = val {
+                    Ok(v)
+                } else {
+                    Ok(LiteralValue::None)
+                }
+            }
             Err(e) => Err(e),
         }
     }

@@ -4,7 +4,9 @@ use crate::callable::CarlaeFunction;
 use crate::error::CarlaeError;
 use crate::expr::LiteralValue;
 use crate::interpreter::Interpreter;
-use crate::stmt::{Assignment, FuncDef, IfClause, PrintConfig, PrintMode, Stmt, WhileClause};
+use crate::stmt::{
+    Assignment, FuncDef, IfClause, PrintConfig, PrintMode, ReturnValue, Stmt, WhileClause,
+};
 
 impl Interpreter {
     pub fn execute(&mut self, stmt: &Stmt) -> Result<(), CarlaeError> {
@@ -51,6 +53,15 @@ impl Interpreter {
                     println!();
                 }
                 Ok(())
+            }
+            Stmt::Return(ReturnValue { value, .. }) => {
+                let ret = if let Some(expr) = value {
+                    Some(self.evaluate(expr)?)
+                } else {
+                    None
+                };
+
+                Err(CarlaeError::Return(ret))
             }
             Stmt::Variable(Assignment { name, initializer }) => {
                 let value = self.evaluate(initializer)?;
