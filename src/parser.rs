@@ -1,6 +1,8 @@
 use crate::error::CarlaeError;
 use crate::expr::{Expr, LiteralValue};
-use crate::stmt::{Assignment, FuncDef, IfClause, PrintConfig, PrintMode, Stmt, WhileClause};
+use crate::stmt::{
+    Assignment, FuncDef, IfClause, PrintConfig, PrintMode, ReturnValue, Stmt, WhileClause,
+};
 use crate::token::{Token, TokenKind};
 
 type ParserRule = fn(&mut Parser) -> Result<Expr, CarlaeError>;
@@ -226,6 +228,10 @@ impl Parser {
                         self.advance();
                         self.print_stmt(line)?
                     }
+                    TokenKind::Return => {
+                        self.advance();
+                        self.return_stmt(line)?
+                    }
                     _ => self.expression_stmt(line)?,
                 }
             };
@@ -276,6 +282,24 @@ impl Parser {
         } else {
             Err(CarlaeError::Parsing(format!(
                 "[Line {line}] Invalid syntax for print statement",
+            )))
+        }
+    }
+
+    fn return_stmt(&mut self, line: usize) -> Result<Stmt, CarlaeError> {
+        let keyword = self.previous().clone();
+        let value = if !self.current_matches(&[TokenKind::Newline]) {
+            Some(self.expression()?)
+        } else {
+            None
+        };
+
+        if self.current_matches(&[TokenKind::Newline]) {
+            self.advance();
+            Ok(Stmt::Return(ReturnValue { keyword, value }))
+        } else {
+            Err(CarlaeError::Parsing(format!(
+                "[Line {line}] Missing newline after return statement"
             )))
         }
     }

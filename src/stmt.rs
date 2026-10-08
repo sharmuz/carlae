@@ -8,6 +8,7 @@ pub enum Stmt {
     If(IfClause),
     While(WhileClause),
     Print(PrintConfig),
+    Return(ReturnValue),
     Variable(Assignment),
 }
 
@@ -60,6 +61,13 @@ impl std::fmt::Display for Stmt {
                     write!(f, "print")
                 }
             }
+            Self::Return(ReturnValue { value, .. }) => {
+                if let Some(expr) = value {
+                    write!(f, "return {expr}")
+                } else {
+                    write!(f, "return")
+                }
+            }
             Self::Variable(Assignment { name, initializer }) => {
                 write!(f, "{} = {}", name.lexeme, initializer)
             }
@@ -97,6 +105,12 @@ pub struct PrintConfig {
 pub enum PrintMode {
     FinalNewline,
     NoNewline,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ReturnValue {
+    pub keyword: Token,
+    pub value: Option<Expr>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
