@@ -1,12 +1,23 @@
+use std::rc::Rc;
+
+use crate::callable::CarlaeFunction;
 use crate::error::CarlaeError;
+use crate::expr::LiteralValue;
 use crate::interpreter::Interpreter;
-use crate::stmt::{Assignment, IfClause, PrintConfig, PrintMode, Stmt, WhileClause};
+use crate::stmt::{Assignment, FuncDef, IfClause, PrintConfig, PrintMode, Stmt, WhileClause};
 
 impl Interpreter {
     pub fn execute(&mut self, stmt: &Stmt) -> Result<(), CarlaeError> {
         match stmt {
             Stmt::Expression(expr) => {
                 self.evaluate(expr)?;
+                Ok(())
+            }
+            Stmt::Function(f @ FuncDef { name, .. }) => {
+                let func = Rc::new(CarlaeFunction { def: f.clone() });
+                self.env
+                    .borrow_mut()
+                    .bind(name.lexeme.clone(), LiteralValue::Function(func));
                 Ok(())
             }
             Stmt::If(IfClause { cond, then, r#else }) => {
