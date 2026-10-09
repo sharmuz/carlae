@@ -1,0 +1,20 @@
+# Expect four syntax errors, a failure exit status and no stdout.
+# Keep the unfinished call at EOF to test the missing ')' regression.
+
+print "THIS MUST NOT RUN"
+
+if True:
+    broken_if =
+    def after_error():
+        broken_function =
+        print "THIS MUST NOT RUN"
+    print "THIS MUST NOT RUN"
+else:
+    print "THIS MUST NOT RUN"
+
+while False:
+    broken_while = * 2
+    print "THIS MUST NOT RUN"
+
+if True:
+    unfinished_call(1

@@ -1,0 +1,9 @@
+def nested_return():
+    if True:
+        if True:
+            return 88
+        print "UNREACHABLE: after inner if"
+    print "UNREACHABLE: after outer if"
+    return 0
+
+print nested_return()
