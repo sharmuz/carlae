@@ -26,7 +26,7 @@ impl Parser {
         let mut program: Vec<Stmt> = Vec::new();
 
         while !self.is_at_end() {
-            match self.declaration() {
+            match self.statement() {
                 Ok(stmt) => program.push(stmt),
                 Err(err) => {
                     self.has_error = true;
@@ -46,13 +46,78 @@ impl Parser {
         }
     }
 
-    fn declaration(&mut self) -> Result<Stmt, CarlaeError> {
-        if self.current_matches(&[TokenKind::Def]) {
-            self.advance();
-            self.function()
+    fn statement(&mut self) -> Result<Stmt, CarlaeError> {
+        if self.current_matches(&[TokenKind::If, TokenKind::While, TokenKind::Def]) {
+            self.compound_statement()
         } else {
-            self.statement()
+            self.simple_statement()
         }
+    }
+
+    fn compound_statement(&mut self) -> Result<Stmt, CarlaeError> {
+        if let Some(t) = self.peek() {
+            let line = t.line;
+            let stmt = match &t.kind {
+                TokenKind::If => {
+                    self.advance();
+                    self.if_stmt(line)?
+                }
+                TokenKind::While => {
+                    self.advance();
+                    self.while_stmt(line)?
+                }
+                TokenKind::Def => {
+                    self.advance();
+                    self.function()?
+                }
+                _ => self.expression_stmt(line)?,
+            };
+            Ok(stmt)
+        } else {
+            let prev = self.previous();
+            Err(CarlaeError::Parsing(format!(
+                "[Line {}] Expected token after {:?}",
+                prev.line, prev.kind
+            )))
+        }
+    }
+
+    fn if_stmt(&mut self, line: usize) -> Result<Stmt, CarlaeError> {
+        let cond = self.expression()?;
+        if !self.current_matches(&[TokenKind::Colon]) {
+            return Err(CarlaeError::Parsing(format!(
+                "[Line {line}] If statement missing `:` after condition",
+            )));
+        };
+        self.advance();
+        let then = self.suite()?;
+
+        let mut r#else = None;
+        if self.current_matches(&[TokenKind::Else]) {
+            self.advance();
+            if !self.current_matches(&[TokenKind::Colon]) {
+                return Err(CarlaeError::Parsing(format!(
+                    "[Line {line}] If statement missing `:` after else",
+                )));
+            };
+            self.advance();
+            r#else = Some(self.suite()?);
+        }
+
+        Ok(Stmt::If(IfClause { cond, then, r#else }))
+    }
+
+    fn while_stmt(&mut self, line: usize) -> Result<Stmt, CarlaeError> {
+        let cond = self.expression()?;
+        if !self.current_matches(&[TokenKind::Colon]) {
+            return Err(CarlaeError::Parsing(format!(
+                "[Line {line}] While statement missing `:` after condition",
+            )));
+        };
+        self.advance();
+        let body = self.suite()?;
+
+        Ok(Stmt::While(WhileClause { cond, body }))
     }
 
     fn function(&mut self) -> Result<Stmt, CarlaeError> {
@@ -129,76 +194,6 @@ impl Parser {
                 prev.line
             )))
         }
-    }
-
-    fn statement(&mut self) -> Result<Stmt, CarlaeError> {
-        if self.current_matches(&[TokenKind::If, TokenKind::While]) {
-            self.compound_statement()
-        } else {
-            self.simple_statement()
-        }
-    }
-
-    fn compound_statement(&mut self) -> Result<Stmt, CarlaeError> {
-        if let Some(t) = self.peek() {
-            let line = t.line;
-            let stmt = match &t.kind {
-                TokenKind::If => {
-                    self.advance();
-                    self.if_stmt(line)?
-                }
-                TokenKind::While => {
-                    self.advance();
-                    self.while_stmt(line)?
-                }
-                _ => self.expression_stmt(line)?,
-            };
-            Ok(stmt)
-        } else {
-            let prev = self.previous();
-            Err(CarlaeError::Parsing(format!(
-                "[Line {}] Expected token after {:?}",
-                prev.line, prev.kind
-            )))
-        }
-    }
-
-    fn if_stmt(&mut self, line: usize) -> Result<Stmt, CarlaeError> {
-        let cond = self.expression()?;
-        if !self.current_matches(&[TokenKind::Colon]) {
-            return Err(CarlaeError::Parsing(format!(
-                "[Line {line}] If statement missing `:` after condition",
-            )));
-        };
-        self.advance();
-        let then = self.suite()?;
-
-        let mut r#else = None;
-        if self.current_matches(&[TokenKind::Else]) {
-            self.advance();
-            if !self.current_matches(&[TokenKind::Colon]) {
-                return Err(CarlaeError::Parsing(format!(
-                    "[Line {line}] If statement missing `:` after else",
-                )));
-            };
-            self.advance();
-            r#else = Some(self.suite()?);
-        }
-
-        Ok(Stmt::If(IfClause { cond, then, r#else }))
-    }
-
-    fn while_stmt(&mut self, line: usize) -> Result<Stmt, CarlaeError> {
-        let cond = self.expression()?;
-        if !self.current_matches(&[TokenKind::Colon]) {
-            return Err(CarlaeError::Parsing(format!(
-                "[Line {line}] While statement missing `:` after condition",
-            )));
-        };
-        self.advance();
-        let body = self.suite()?;
-
-        Ok(Stmt::While(WhileClause { cond, body }))
     }
 
     fn suite(&mut self) -> Result<Vec<Stmt>, CarlaeError> {
