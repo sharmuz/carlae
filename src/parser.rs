@@ -23,10 +23,6 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> Result<Vec<Stmt>, CarlaeError> {
-        self.program()
-    }
-
-    fn program(&mut self) -> Result<Vec<Stmt>, CarlaeError> {
         let mut program: Vec<Stmt> = Vec::new();
 
         while !self.is_at_end() {
@@ -475,19 +471,18 @@ impl Parser {
                 args.push(self.expression()?);
             }
         };
-        self.advance();
-        let paren = self.previous();
 
-        if !matches!(paren.kind, TokenKind::RightParen) {
+        if !self.current_matches(&[TokenKind::RightParen]) {
             Err(CarlaeError::Parsing(format!(
                 "[Line {}] Missing `)` after function arguments",
-                paren.line
+                self.previous().line
             )))
         } else {
+            self.advance();
             Ok(Expr::Call {
                 callee: Box::new(callee),
                 args,
-                paren: paren.clone(),
+                paren: self.previous().clone(),
             })
         }
     }
