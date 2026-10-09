@@ -10,11 +10,16 @@ type ParserRule = fn(&mut Parser) -> Result<Expr, CarlaeError>;
 pub struct Parser {
     tokens: Vec<Token>,
     current: usize,
+    has_error: bool,
 }
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        Self { tokens, current: 0 }
+        Self {
+            tokens,
+            current: 0,
+            has_error: false,
+        }
     }
 
     pub fn parse(&mut self) -> Result<Vec<Stmt>, CarlaeError> {
@@ -23,17 +28,26 @@ impl Parser {
 
     fn program(&mut self) -> Result<Vec<Stmt>, CarlaeError> {
         let mut program: Vec<Stmt> = Vec::new();
+
         while !self.is_at_end() {
             match self.declaration() {
-                Ok(decl) => program.push(decl),
-                Err(_) => match self.synchronize() {
-                    Ok(_) => (),
-                    Err(e) => return Err(e),
-                },
+                Ok(stmt) => program.push(stmt),
+                Err(err) => {
+                    self.has_error = true;
+                    eprintln!("{err}");
+                    match self.synchronize() {
+                        Ok(()) => (),
+                        Err(e) => return Err(e),
+                    };
+                }
             }
         }
 
-        Ok(program)
+        if !self.has_error {
+            Ok(program)
+        } else {
+            Err(CarlaeError::Parsing("Found above syntax errors.".into()))
+        }
     }
 
     fn declaration(&mut self) -> Result<Stmt, CarlaeError> {
@@ -201,7 +215,17 @@ impl Parser {
             self.advance();
             self.advance();
             while !self.current_matches(&[TokenKind::Dedent]) {
-                stmts.push(self.statement()?);
+                match self.statement() {
+                    Ok(stmt) => stmts.push(stmt),
+                    Err(err) => {
+                        self.has_error = true;
+                        eprintln!("{err}");
+                        match self.synchronize() {
+                            Ok(()) => (),
+                            Err(e) => return Err(e),
+                        };
+                    }
+                }
             }
             self.advance();
         } else {
@@ -547,7 +571,25 @@ impl Parser {
     }
 
     fn synchronize(&mut self) -> Result<(), CarlaeError> {
-        todo!()
+        while !self.is_at_end() {
+            if self.current_matches(&[TokenKind::Newline]) {
+                self.advance();
+                return Ok(());
+            }
+
+            match self.peek().expect("Token stream not yet exhausted").kind {
+                TokenKind::Def
+                | TokenKind::If
+                | TokenKind::While
+                | TokenKind::Print
+                | TokenKind::Return => return Ok(()),
+                _ => (),
+            };
+
+            self.advance();
+        }
+
+        Ok(())
     }
 }
 
