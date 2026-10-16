@@ -5,6 +5,7 @@ use crate::value::Value;
 pub struct Chunk {
     code: Vec<OpCode>,
     constants: Vec<Value>,
+    lines: Vec<usize>,
 }
 
 impl Chunk {
@@ -12,11 +13,13 @@ impl Chunk {
         Chunk {
             code: Vec::new(),
             constants: Vec::new(),
+            lines: Vec::new(),
         }
     }
 
-    pub fn add_op(&mut self, op: OpCode) {
-        self.code.push(op)
+    pub fn add_op(&mut self, op: OpCode, line: usize) {
+        self.code.push(op);
+        self.lines.push(line)
     }
 
     pub fn add_constant(&mut self, constant: Value) {
@@ -27,9 +30,16 @@ impl Chunk {
 impl fmt::Display for Chunk {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (i, op) in self.code.iter().enumerate() {
+            write!(f, "{i:04}")?;
+            if i == 0 || self.lines[i] != self.lines[i - 1] {
+                write!(f, "  {:>4}  ", self.lines[i])?
+            } else {
+                write!(f, "  {:>4}  ", '|')?
+            }
+
             match op {
-                OpCode::OpReturn => writeln!(f, "{i:04} {op}")?,
-                OpCode::OpConstant(i) => writeln!(f, "{i:04} {op} {}", self.constants[*i])?,
+                OpCode::OpReturn => writeln!(f, "{op}")?,
+                OpCode::OpConstant(i) => writeln!(f, "{op} {}", self.constants[*i])?,
             }
         }
         Ok(())

@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use std::{
     fs::File,
     io::{BufReader, Read},
@@ -69,9 +71,9 @@ fn run(source: String) -> Result<(), CarlaeError> {
     // interpreter.interpret(&program)?;
 
     let mut chunk = Chunk::new();
-    chunk.add_op(OpCode::OpReturn);
-    chunk.add_op(OpCode::OpReturn);
-    chunk.add_op(OpCode::OpConstant(1));
+    chunk.add_op(OpCode::OpReturn, 8);
+    chunk.add_op(OpCode::OpReturn, 1235);
+    chunk.add_op(OpCode::OpConstant(1), 1235);
     chunk.add_constant(0.1);
     chunk.add_constant(88.8);
 
