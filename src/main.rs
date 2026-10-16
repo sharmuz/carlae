@@ -23,6 +23,7 @@ mod parser;
 mod scanner;
 mod stmt;
 mod token;
+mod value;
 
 fn main() -> Result<(), CarlaeError> {
     let mut args = std::env::args().skip(1);
@@ -65,10 +66,11 @@ fn run(source: String) -> Result<(), CarlaeError> {
     // }
 
     // let mut interpreter = Interpreter::new();
-    // interpreter.interpret(&program)
+    // interpreter.interpret(&program)?;
 
     let chunk = Chunk {
-        code: vec![OpCode::OpReturn, OpCode::OpReturn],
+        code: vec![OpCode::OpReturn, OpCode::OpReturn, OpCode::OpConstant(0)],
+        constants: vec![88.8, 0.1],
     };
     print!("{chunk}");
     Ok(())
