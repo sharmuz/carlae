@@ -4,6 +4,7 @@ use std::{
     path::Path,
 };
 
+use crate::chunk::{Chunk, OpCode};
 use crate::error::CarlaeError;
 use crate::interpreter::Interpreter;
 use crate::parser::Parser;
@@ -11,6 +12,7 @@ use crate::scanner::Scanner;
 
 mod builtins;
 mod callable;
+mod chunk;
 mod environment;
 mod error;
 mod eval;
@@ -62,6 +64,12 @@ fn run(source: String) -> Result<(), CarlaeError> {
     //     println!("{stmt}")
     // }
 
-    let mut interpreter = Interpreter::new();
-    interpreter.interpret(&program)
+    // let mut interpreter = Interpreter::new();
+    // interpreter.interpret(&program)
+
+    let chunk = Chunk {
+        code: vec![OpCode::OpReturn, OpCode::OpReturn],
+    };
+    print!("{chunk}");
+    Ok(())
 }
