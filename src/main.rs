@@ -68,10 +68,13 @@ fn run(source: String) -> Result<(), CarlaeError> {
     // let mut interpreter = Interpreter::new();
     // interpreter.interpret(&program)?;
 
-    let chunk = Chunk {
-        code: vec![OpCode::OpReturn, OpCode::OpReturn, OpCode::OpConstant(0)],
-        constants: vec![88.8, 0.1],
-    };
+    let mut chunk = Chunk::new();
+    chunk.add_op(OpCode::OpReturn);
+    chunk.add_op(OpCode::OpReturn);
+    chunk.add_op(OpCode::OpConstant(1));
+    chunk.add_constant(0.1);
+    chunk.add_constant(88.8);
+
     print!("{chunk}");
     Ok(())
 }

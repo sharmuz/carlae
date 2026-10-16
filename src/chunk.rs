@@ -3,8 +3,25 @@ use std::fmt;
 use crate::value::Value;
 
 pub struct Chunk {
-    pub code: Vec<OpCode>,
-    pub constants: Vec<Value>,
+    code: Vec<OpCode>,
+    constants: Vec<Value>,
+}
+
+impl Chunk {
+    pub fn new() -> Self {
+        Chunk {
+            code: Vec::new(),
+            constants: Vec::new(),
+        }
+    }
+
+    pub fn add_op(&mut self, op: OpCode) {
+        self.code.push(op)
+    }
+
+    pub fn add_constant(&mut self, constant: Value) {
+        self.constants.push(constant)
+    }
 }
 
 impl fmt::Display for Chunk {
