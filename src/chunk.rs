@@ -3,7 +3,7 @@ use std::fmt;
 use crate::value::Value;
 
 pub struct Chunk {
-    code: Vec<OpCode>,
+    pub code: Vec<OpCode>,
     constants: Vec<Value>,
     lines: Vec<usize>,
 }

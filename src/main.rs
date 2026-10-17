@@ -11,6 +11,7 @@ use crate::error::CarlaeError;
 use crate::interpreter::Interpreter;
 use crate::parser::Parser;
 use crate::scanner::Scanner;
+use crate::vm::Vm;
 
 mod builtins;
 mod callable;
@@ -26,6 +27,7 @@ mod scanner;
 mod stmt;
 mod token;
 mod value;
+mod vm;
 
 fn main() -> Result<(), CarlaeError> {
     let mut args = std::env::args().skip(1);
@@ -78,5 +80,8 @@ fn run(source: String) -> Result<(), CarlaeError> {
     chunk.add_constant(88.8);
 
     print!("{chunk}");
+
+    let mut vm = Vm::new(&chunk);
+
     Ok(())
 }
