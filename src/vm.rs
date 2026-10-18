@@ -16,4 +16,15 @@ impl<'a> Vm<'a> {
         self.ip += 1;
         op
     }
+
+    #[allow(clippy::never_loop)]
+    pub fn run(&mut self) -> Result<(), CarlaeError> {
+        loop {
+            let instruction = self.read_op();
+            match instruction {
+                OpCode::OpReturn => return Ok(()),
+                op => return Err(CarlaeError::Compile(format!("Unknown opcode {op}"))),
+            }
+        }
+    }
 }
