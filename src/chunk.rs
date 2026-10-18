@@ -46,6 +46,7 @@ impl fmt::Display for Chunk {
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum OpCode {
     OpConstant(usize),
     OpReturn,
