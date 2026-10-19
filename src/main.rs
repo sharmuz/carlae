@@ -75,12 +75,9 @@ fn run(source: String) -> Result<(), CarlaeError> {
     let mut chunk = Chunk::new();
     chunk.add_op(OpCode::OpConstant(1), 1235);
     chunk.add_op(OpCode::OpReturn, 8);
-    chunk.add_op(OpCode::OpReturn, 1235);
     chunk.add_constant(0.1);
     chunk.add_constant(88.8);
 
-    print!("{chunk}");
-
-    let mut vm = Vm::new(&chunk);
+    let mut vm = Vm::new(&chunk, true);
     vm.run()
 }
