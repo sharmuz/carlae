@@ -40,11 +40,11 @@ impl<'a> Vm<'a> {
             }
 
             match instruction {
-                OpCode::OpConstant(c) => {
+                OpCode::Constant(c) => {
                     let val = self.read_constant(c);
                     self.stack.push(val);
                 }
-                OpCode::OpNegate => {
+                OpCode::Negate => {
                     if let Some(val) = self.stack.pop() {
                         self.stack.push(-val)
                     } else {
@@ -54,7 +54,7 @@ impl<'a> Vm<'a> {
                         )));
                     }
                 }
-                OpCode::OpReturn => {
+                OpCode::Return => {
                     if let Some(val) = self.stack.pop() {
                         println!("{val}");
                     }

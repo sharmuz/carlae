@@ -73,9 +73,9 @@ fn run(source: String) -> Result<(), CarlaeError> {
     // interpreter.interpret(&program)?;
 
     let mut chunk = Chunk::new();
-    chunk.add_op(OpCode::OpConstant(1), 7);
-    chunk.add_op(OpCode::OpNegate, 8);
-    chunk.add_op(OpCode::OpReturn, 9);
+    chunk.add_op(OpCode::Constant(1), 7);
+    chunk.add_op(OpCode::Negate, 8);
+    chunk.add_op(OpCode::Return, 9);
     chunk.add_constant(0.1);
     chunk.add_constant(88.8);
 
