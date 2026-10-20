@@ -50,7 +50,7 @@ impl<'a> Vm<'a> {
                     } else {
                         return Err(CarlaeError::Runtime(format!(
                             "[Line {}]: Missing operand for `-`",
-                            self.chunk.lines[self.ip]
+                            self.chunk.lines[self.ip - 1]
                         )));
                     }
                 }
@@ -88,7 +88,7 @@ impl<'a> Vm<'a> {
         } else {
             return Err(CarlaeError::Runtime(format!(
                 "[Line {}]: Missing right operand for binary operator",
-                self.chunk.lines[self.ip]
+                self.chunk.lines[self.ip - 1]
             )));
         };
         let left = if let Some(val) = self.stack.pop() {
@@ -96,7 +96,7 @@ impl<'a> Vm<'a> {
         } else {
             return Err(CarlaeError::Runtime(format!(
                 "[Line {}]: Missing right operand for binary operator",
-                self.chunk.lines[self.ip]
+                self.chunk.lines[self.ip - 1]
             )));
         };
 
@@ -108,7 +108,7 @@ impl<'a> Vm<'a> {
                 if right == 0.0 {
                     return Err(CarlaeError::Runtime(format!(
                         "[Line {}]: Cannot divide by zero",
-                        self.chunk.lines[self.ip]
+                        self.chunk.lines[self.ip - 1]
                     )));
                 }
                 left / right
@@ -116,7 +116,7 @@ impl<'a> Vm<'a> {
             op => {
                 return Err(CarlaeError::Runtime(format!(
                     "[Line {}]: Invalid binary operator {op}",
-                    self.chunk.lines[self.ip]
+                    self.chunk.lines[self.ip - 1]
                 )));
             }
         };
