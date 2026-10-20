@@ -7,6 +7,7 @@ use std::{
 };
 
 use crate::chunk::{Chunk, OpCode};
+use crate::compiler::Compiler;
 use crate::error::CarlaeError;
 use crate::interpreter::Interpreter;
 use crate::parser::Parser;
@@ -16,6 +17,7 @@ use crate::vm::Vm;
 mod builtins;
 mod callable;
 mod chunk;
+mod compiler;
 mod environment;
 mod error;
 mod eval;
@@ -65,31 +67,36 @@ fn run(source: String) -> Result<(), CarlaeError> {
 
     let mut parser = Parser::new(scanner.tokens);
     let program = parser.parse()?;
-    // for stmt in program.iter() {
-    //     println!("{stmt}")
-    // }
+    for stmt in program.iter() {
+        println!("{stmt:?}")
+    }
 
     // let mut interpreter = Interpreter::new();
     // interpreter.interpret(&program)?;
 
-    let mut chunk = Chunk::new();
-    chunk.add_constant(0.1);
-    chunk.add_op(OpCode::Constant(0), 7);
+    let compiler = Compiler::new();
+    let chunk = compiler.compile(program)?;
 
-    chunk.add_op(OpCode::Negate, 7);
+    // let mut chunk = Chunk::new();
+    // chunk.add_constant(0.1);
+    // chunk.add_op(OpCode::Constant(0), 7);
 
-    chunk.add_constant(88.8);
-    chunk.add_op(OpCode::Constant(1), 8);
+    // chunk.add_op(OpCode::Negate, 7);
 
-    chunk.add_op(OpCode::Add, 9);
+    // chunk.add_constant(88.8);
+    // chunk.add_op(OpCode::Constant(1), 8);
 
-    chunk.add_constant(2.0);
-    chunk.add_op(OpCode::Constant(2), 10);
+    // chunk.add_op(OpCode::Add, 9);
 
-    chunk.add_op(OpCode::Divide, 10);
+    // chunk.add_constant(2.0);
+    // chunk.add_op(OpCode::Constant(2), 10);
 
-    chunk.add_op(OpCode::Return, 11);
+    // chunk.add_op(OpCode::Divide, 10);
+
+    // chunk.add_op(OpCode::Return, 11);
 
     let mut vm = Vm::new(&chunk, true);
     vm.run()
+
+    // Ok(())
 }
