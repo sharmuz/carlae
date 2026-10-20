@@ -32,6 +32,7 @@ impl Compiler {
     fn expression(&self, chunk: &mut Chunk, expr: &Expr) -> Result<(), CarlaeError> {
         match expr {
             Expr::Literal(val) => self.literal(chunk, val),
+            Expr::Unary { operator, right } => self.unary(chunk, operator, right),
             Expr::Binary {
                 left,
                 operator,
@@ -39,6 +40,22 @@ impl Compiler {
             } => self.binary(chunk, left, operator, right),
             e => Err(CarlaeError::Compile(format!("Unknown expression {e}"))),
         }
+    }
+
+    fn unary(&self, chunk: &mut Chunk, operator: &Token, right: &Expr) -> Result<(), CarlaeError> {
+        self.expression(chunk, right)?;
+
+        match &operator.kind {
+            TokenKind::Minus => chunk.add_op(OpCode::Negate, operator.line),
+            op => {
+                return Err(CarlaeError::Compile(format!(
+                    "[Line {}]: Invalid unary operator {op:?}.",
+                    operator.line
+                )));
+            }
+        };
+
+        Ok(())
     }
 
     fn binary(
