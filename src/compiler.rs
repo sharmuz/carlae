@@ -38,6 +38,7 @@ impl Compiler {
                 operator,
                 right,
             } => self.binary(chunk, left, operator, right),
+            Expr::Grouping(expr) => self.expression(chunk, expr),
             e => Err(CarlaeError::Compile(format!("Unknown expression {e}"))),
         }
     }
