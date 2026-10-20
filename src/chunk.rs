@@ -5,7 +5,7 @@ use crate::value::Value;
 pub struct Chunk {
     pub code: Vec<OpCode>,
     pub constants: Vec<Value>,
-    lines: Vec<usize>,
+    pub lines: Vec<usize>,
 }
 
 impl Chunk {
@@ -39,6 +39,7 @@ impl fmt::Display for Chunk {
 
             match op {
                 OpCode::OpReturn => writeln!(f, "{op}")?,
+                OpCode::OpNegate => writeln!(f, "{op}")?,
                 OpCode::OpConstant(i) => writeln!(f, "{op} {}", self.constants[*i])?,
             }
         }
@@ -49,6 +50,7 @@ impl fmt::Display for Chunk {
 #[derive(Clone, Copy)]
 pub enum OpCode {
     OpConstant(usize),
+    OpNegate,
     OpReturn,
 }
 
@@ -56,6 +58,7 @@ impl fmt::Display for OpCode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::OpReturn => write!(f, "OP_RETURN"),
+            Self::OpNegate => write!(f, "OP_NEGATE"),
             Self::OpConstant(i) => write!(f, "OP_CONSTANT    {i}"),
         }
     }

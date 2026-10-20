@@ -40,15 +40,25 @@ impl<'a> Vm<'a> {
             }
 
             match instruction {
+                OpCode::OpConstant(c) => {
+                    let val = self.read_constant(c);
+                    self.stack.push(val);
+                }
+                OpCode::OpNegate => {
+                    if let Some(val) = self.stack.pop() {
+                        self.stack.push(-val)
+                    } else {
+                        return Err(CarlaeError::Runtime(format!(
+                            "[Line {}]: Missing operand for `-`",
+                            self.chunk.lines[self.ip]
+                        )));
+                    }
+                }
                 OpCode::OpReturn => {
                     if let Some(val) = self.stack.pop() {
                         println!("{val}");
                     }
                     return Ok(());
-                }
-                OpCode::OpConstant(c) => {
-                    let val = self.read_constant(c);
-                    self.stack.push(val);
                 }
                 op => return Err(CarlaeError::Compile(format!("Unknown opcode: {op}"))),
             }
