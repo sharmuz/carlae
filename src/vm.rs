@@ -54,6 +54,7 @@ impl<'a> Vm<'a> {
                         )));
                     }
                 }
+                op @ OpCode::Add => self.binary_op(&op)?,
                 OpCode::Return => {
                     if let Some(val) = self.stack.pop() {
                         println!("{val}");
@@ -77,5 +78,37 @@ impl<'a> Vm<'a> {
             print!("[ {val} ]");
         }
         println!();
+    }
+
+    fn binary_op(&mut self, instruction: &OpCode) -> Result<(), CarlaeError> {
+        let right = if let Some(val) = self.stack.pop() {
+            val
+        } else {
+            return Err(CarlaeError::Runtime(format!(
+                "[Line {}]: Missing right operand for binary operator",
+                self.chunk.lines[self.ip]
+            )));
+        };
+        let left = if let Some(val) = self.stack.pop() {
+            val
+        } else {
+            return Err(CarlaeError::Runtime(format!(
+                "[Line {}]: Missing right operand for binary operator",
+                self.chunk.lines[self.ip]
+            )));
+        };
+
+        let res = match instruction {
+            OpCode::Add => left + right,
+            op => {
+                return Err(CarlaeError::Runtime(format!(
+                    "[Line {}]: Invalid binary operator {op}",
+                    self.chunk.lines[self.ip]
+                )));
+            }
+        };
+        self.stack.push(res);
+
+        Ok(())
     }
 }
