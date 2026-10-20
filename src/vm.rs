@@ -54,7 +54,9 @@ impl<'a> Vm<'a> {
                         )));
                     }
                 }
-                op @ OpCode::Add => self.binary_op(&op)?,
+                op @ (OpCode::Add | OpCode::Subtract | OpCode::Multiply | OpCode::Divide) => {
+                    self.binary_op(&op)?
+                }
                 OpCode::Return => {
                     if let Some(val) = self.stack.pop() {
                         println!("{val}");
@@ -100,6 +102,9 @@ impl<'a> Vm<'a> {
 
         let res = match instruction {
             OpCode::Add => left + right,
+            OpCode::Subtract => left - right,
+            OpCode::Multiply => left * right,
+            OpCode::Divide => left / right,
             op => {
                 return Err(CarlaeError::Runtime(format!(
                     "[Line {}]: Invalid binary operator {op}",
