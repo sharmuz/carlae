@@ -104,7 +104,15 @@ impl<'a> Vm<'a> {
             OpCode::Add => left + right,
             OpCode::Subtract => left - right,
             OpCode::Multiply => left * right,
-            OpCode::Divide => left / right,
+            OpCode::Divide => {
+                if right == 0.0 {
+                    return Err(CarlaeError::Runtime(format!(
+                        "[Line {}]: Cannot divide by zero",
+                        self.chunk.lines[self.ip]
+                    )));
+                }
+                left / right
+            }
             op => {
                 return Err(CarlaeError::Runtime(format!(
                     "[Line {}]: Invalid binary operator {op}",
