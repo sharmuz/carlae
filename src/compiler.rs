@@ -93,8 +93,7 @@ impl Compiler {
     }
 
     fn number(&self, chunk: &mut Chunk, n: f64) -> Result<(), CarlaeError> {
-        chunk.add_constant(n);
-        let idx = chunk.constants.len() - 1;
+        let idx = chunk.add_constant(n);
         chunk.add_op(OpCode::Constant(idx), 0); // TODO: Get actual line number
         Ok(())
     }
