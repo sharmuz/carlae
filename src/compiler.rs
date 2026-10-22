@@ -15,7 +15,7 @@ impl Compiler {
         let mut chunk = Chunk::new();
 
         for stmt in ast.iter() {
-            self.statement(&mut chunk, stmt);
+            self.statement(&mut chunk, stmt)?;
         }
 
         chunk.add_op(OpCode::Return, 0);
