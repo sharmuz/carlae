@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::chunk::{Chunk, OpCode};
 use crate::error::CarlaeError;
 use crate::value::Value;
@@ -25,8 +27,8 @@ impl<'a> Vm<'a> {
         op
     }
 
-    pub fn read_constant(&self, index: usize) -> Value {
-        self.chunk.constants[index]
+    pub fn read_constant(&self, index: usize) -> &Value {
+        &self.chunk.constants[index]
     }
 
     #[allow(clippy::never_loop)]
@@ -42,11 +44,11 @@ impl<'a> Vm<'a> {
             match instruction {
                 OpCode::Constant(c) => {
                     let val = self.read_constant(c);
-                    self.stack.push(val);
+                    self.stack.push(val.clone());
                 }
                 OpCode::Negate => {
                     if let Some(val) = self.stack.pop() {
-                        self.stack.push(-val)
+                        self.stack.push(Value::Number(-val.as_number()?))
                     } else {
                         return Err(CarlaeError::Runtime(format!(
                             "[Line {}]: Missing operand for `-`",
@@ -101,18 +103,74 @@ impl<'a> Vm<'a> {
         };
 
         let res = match instruction {
-            OpCode::Add => left + right,
-            OpCode::Subtract => left - right,
-            OpCode::Multiply => left * right,
-            OpCode::Divide => {
-                if right == 0.0 {
+            OpCode::Add => match (left, right) {
+                (
+                    x @ (Value::Number(_) | Value::Boolean(_)),
+                    y @ (Value::Number(_) | Value::Boolean(_)),
+                ) => Value::Number(x.as_number()? + y.as_number()?),
+                (Value::String(s), Value::String(t)) => Value::String(Rc::new(format!("{s}{t}"))),
+                (x, y) => {
                     return Err(CarlaeError::Runtime(format!(
-                        "[Line {}]: Cannot divide by zero",
+                        "[Line {}]: Invalid arguments to binary operator +: {x}, {y}",
                         self.chunk.lines[self.ip - 1]
                     )));
                 }
-                left / right
-            }
+            },
+            OpCode::Subtract => match (left, right) {
+                (
+                    x @ (Value::Number(_) | Value::Boolean(_)),
+                    y @ (Value::Number(_) | Value::Boolean(_)),
+                ) => Value::Number(x.as_number()? - y.as_number()?),
+                (x, y) => {
+                    return Err(CarlaeError::Runtime(format!(
+                        "[Line {}]: Invalid arguments to binary operator -: {x}, {y}",
+                        self.chunk.lines[self.ip - 1]
+                    )));
+                }
+            },
+            OpCode::Multiply => match (left, right) {
+                (
+                    x @ (Value::Number(_) | Value::Boolean(_)),
+                    y @ (Value::Number(_) | Value::Boolean(_)),
+                ) => Value::Number(x.as_number()? * y.as_number()?),
+                (Value::Number(n), Value::String(s)) | (Value::String(s), Value::Number(n)) => {
+                    if n.fract() == 0.0 {
+                        Value::String(Rc::new(s.repeat(n as usize)))
+                    } else {
+                        return Err(CarlaeError::Runtime(format!(
+                            "[Line {}]: Can't multiply strings by fractional numbers",
+                            self.chunk.lines[self.ip - 1]
+                        )));
+                    }
+                }
+                (x, y) => {
+                    return Err(CarlaeError::Runtime(format!(
+                        "[Line {}]: Invalid arguments to binary operator *: {x}, {y}",
+                        self.chunk.lines[self.ip - 1]
+                    )));
+                }
+            },
+            OpCode::Divide => match (left, right) {
+                (
+                    x @ (Value::Number(_) | Value::Boolean(_)),
+                    y @ (Value::Number(_) | Value::Boolean(_)),
+                ) => {
+                    let y = y.as_number()?;
+                    if y == 0.0 {
+                        return Err(CarlaeError::Runtime(format!(
+                            "[Line {}]: Cannot divide by zero",
+                            self.chunk.lines[self.ip - 1]
+                        )));
+                    }
+                    Value::Number(x.as_number()? / y)
+                }
+                (x, y) => {
+                    return Err(CarlaeError::Runtime(format!(
+                        "[Line {}]: Invalid arguments to binary operator /: {x}, {y}",
+                        self.chunk.lines[self.ip - 1]
+                    )));
+                }
+            },
             op => {
                 return Err(CarlaeError::Runtime(format!(
                     "[Line {}]: Invalid binary operator {op}",

@@ -3,6 +3,7 @@ use crate::error::CarlaeError;
 use crate::expr::{Expr, LiteralValue};
 use crate::stmt::Stmt;
 use crate::token::{Token, TokenKind};
+use crate::value::Value;
 
 pub struct Compiler;
 
@@ -93,7 +94,7 @@ impl Compiler {
     }
 
     fn number(&self, chunk: &mut Chunk, n: f64) -> Result<(), CarlaeError> {
-        let idx = chunk.add_constant(n);
+        let idx = chunk.add_constant(Value::Number(n));
         chunk.add_op(OpCode::Constant(idx), 0); // TODO: Get actual line number
         Ok(())
     }
