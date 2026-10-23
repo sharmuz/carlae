@@ -19,7 +19,8 @@ impl Compiler {
             self.statement(&mut chunk, stmt)?;
         }
 
-        chunk.add_op(OpCode::Return, 0);
+        let line = chunk.lines.last().unwrap_or(&0);
+        chunk.add_op(OpCode::Return, *line);
         Ok(chunk)
     }
 
