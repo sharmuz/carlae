@@ -31,6 +31,7 @@ mod token;
 mod value;
 mod vm;
 
+// TODO: Add CLI arg to use VM vs. tree-walker
 fn main() -> Result<(), CarlaeError> {
     let mut args = std::env::args().skip(1);
 
@@ -72,31 +73,11 @@ fn run(source: String) -> Result<(), CarlaeError> {
     }
 
     // let mut interpreter = Interpreter::new();
-    // interpreter.interpret(&program)?;
+    // interpreter.interpret(&program)
 
     let compiler = Compiler::new();
     let chunk = compiler.compile(program)?;
 
-    // let mut chunk = Chunk::new();
-    // chunk.add_constant(0.1);
-    // chunk.add_op(OpCode::Constant(0), 7);
-
-    // chunk.add_op(OpCode::Negate, 7);
-
-    // chunk.add_constant(88.8);
-    // chunk.add_op(OpCode::Constant(1), 8);
-
-    // chunk.add_op(OpCode::Add, 9);
-
-    // chunk.add_constant(2.0);
-    // chunk.add_op(OpCode::Constant(2), 10);
-
-    // chunk.add_op(OpCode::Divide, 10);
-
-    // chunk.add_op(OpCode::Return, 11);
-
     let mut vm = Vm::new(&chunk, true);
     vm.run()
-
-    // Ok(())
 }
