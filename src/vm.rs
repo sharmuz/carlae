@@ -46,6 +46,7 @@ impl<'a> Vm<'a> {
                     let val = self.read_constant(c);
                     self.stack.push(val.clone());
                 }
+                OpCode::None => self.stack.push(Value::None),
                 OpCode::Negate => {
                     if let Some(val) = self.stack.pop() {
                         self.stack.push(Value::Number(-val.as_number()?))

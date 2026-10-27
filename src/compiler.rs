@@ -100,6 +100,10 @@ impl Compiler {
     ) -> Result<(), CarlaeError> {
         match val {
             LiteralValue::Number(n) => self.number(chunk, *n, token),
+            LiteralValue::None => {
+                chunk.add_op(OpCode::None, token.line);
+                Ok(())
+            }
             v => Err(CarlaeError::Compile(format!(
                 "[Line {}]: Unknown literal value {v}",
                 token.line
