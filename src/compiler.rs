@@ -5,11 +5,13 @@ use crate::stmt::Stmt;
 use crate::token::{Token, TokenKind};
 use crate::value::Value;
 
-pub struct Compiler;
+pub struct Compiler {
+    dump_code: bool,
+}
 
 impl Compiler {
-    pub fn new() -> Self {
-        Compiler {}
+    pub fn new(dump_code: bool) -> Self {
+        Compiler { dump_code }
     }
 
     pub fn compile(&self, ast: Vec<Stmt>) -> Result<Chunk, CarlaeError> {
@@ -18,9 +20,12 @@ impl Compiler {
         for stmt in ast.iter() {
             self.statement(&mut chunk, stmt)?;
         }
-
         let line = chunk.lines.last().unwrap_or(&0);
         chunk.add_op(OpCode::Return, *line);
+
+        if self.dump_code {
+            println!("{chunk}")
+        }
         Ok(chunk)
     }
 

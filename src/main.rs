@@ -68,14 +68,14 @@ fn run(source: String) -> Result<(), CarlaeError> {
 
     let mut parser = Parser::new(scanner.tokens);
     let program = parser.parse()?;
-    for stmt in program.iter() {
-        println!("{stmt:?}")
-    }
+    // for stmt in program.iter() {
+        // println!("{stmt:?}")
+    // }
 
     // let mut interpreter = Interpreter::new();
     // interpreter.interpret(&program)
 
-    let compiler = Compiler::new();
+    let compiler = Compiler::new(true);
     let chunk = compiler.compile(program)?;
 
     let mut vm = Vm::new(&chunk, true);
