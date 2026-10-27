@@ -7,6 +7,7 @@ pub enum Value {
     Number(f64),
     Boolean(bool),
     String(Rc<String>),
+    None,
 }
 
 impl std::fmt::Display for Value {
@@ -16,6 +17,7 @@ impl std::fmt::Display for Value {
             Self::Boolean(true) => write!(f, "True"),
             Self::Boolean(false) => write!(f, "False"),
             Self::String(s) => write!(f, "\"{s}\""),
+            Self::None => write!(f, "None"),
         }
     }
 }
@@ -26,6 +28,7 @@ impl Value {
             Self::Number(n) => Ok(*n),
             Self::Boolean(b) => Ok((*b as i32) as f64),
             Self::String(_) => Err(CarlaeError::Runtime("Cannot convert str to float".into())),
+            Self::None => Err(CarlaeError::Runtime("Cannot convert None to float".into())),
         }
     }
 }
