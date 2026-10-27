@@ -33,7 +33,7 @@ impl Compiler {
 
     fn expression(&self, chunk: &mut Chunk, expr: &Expr) -> Result<(), CarlaeError> {
         match expr {
-            Expr::Literal { value, token } => self.literal(chunk, value),
+            Expr::Literal { value, token } => self.literal(chunk, value, token),
             Expr::Unary { operator, right } => self.unary(chunk, operator, right),
             Expr::Binary {
                 left,
@@ -87,16 +87,24 @@ impl Compiler {
         Ok(())
     }
 
-    fn literal(&self, chunk: &mut Chunk, val: &LiteralValue) -> Result<(), CarlaeError> {
+    fn literal(
+        &self,
+        chunk: &mut Chunk,
+        val: &LiteralValue,
+        token: &Token,
+    ) -> Result<(), CarlaeError> {
         match val {
-            LiteralValue::Number(n) => self.number(chunk, *n),
-            v => Err(CarlaeError::Compile(format!("Unknown literal value {v}"))),
+            LiteralValue::Number(n) => self.number(chunk, *n, token),
+            v => Err(CarlaeError::Compile(format!(
+                "[Line {}]: Unknown literal value {v}",
+                token.line
+            ))),
         }
     }
 
-    fn number(&self, chunk: &mut Chunk, n: f64) -> Result<(), CarlaeError> {
+    fn number(&self, chunk: &mut Chunk, n: f64, token: &Token) -> Result<(), CarlaeError> {
         let idx = chunk.add_constant(Value::Number(n));
-        chunk.add_op(OpCode::Constant(idx), 0); // TODO: Get actual line number
+        chunk.add_op(OpCode::Constant(idx), token.line);
         Ok(())
     }
 }
