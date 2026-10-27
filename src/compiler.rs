@@ -100,6 +100,14 @@ impl Compiler {
     ) -> Result<(), CarlaeError> {
         match val {
             LiteralValue::Number(n) => self.number(chunk, *n, token),
+            LiteralValue::Boolean(true) => {
+                chunk.add_op(OpCode::True, token.line);
+                Ok(())
+            }
+            LiteralValue::Boolean(false) => {
+                chunk.add_op(OpCode::False, token.line);
+                Ok(())
+            }
             LiteralValue::None => {
                 chunk.add_op(OpCode::None, token.line);
                 Ok(())

@@ -46,6 +46,8 @@ impl<'a> Vm<'a> {
                     let val = self.read_constant(c);
                     self.stack.push(val.clone());
                 }
+                OpCode::True => self.stack.push(Value::Boolean(true)),
+                OpCode::False => self.stack.push(Value::Boolean(false)),
                 OpCode::None => self.stack.push(Value::None),
                 OpCode::Negate => {
                     if let Some(val) = self.stack.pop() {

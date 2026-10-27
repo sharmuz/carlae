@@ -40,7 +40,9 @@ impl fmt::Display for Chunk {
 
             match op {
                 OpCode::Constant(i) => writeln!(f, "{op} {}", self.constants[*i])?,
-                OpCode::None
+                OpCode::True
+                | OpCode::False
+                | OpCode::None
                 | OpCode::Negate
                 | OpCode::Add
                 | OpCode::Subtract
@@ -56,6 +58,8 @@ impl fmt::Display for Chunk {
 #[derive(Clone, Copy)]
 pub enum OpCode {
     Constant(usize),
+    True,
+    False,
     None,
     Negate,
     Add,
@@ -69,6 +73,8 @@ impl fmt::Display for OpCode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Constant(i) => write!(f, "OP_CONSTANT    {i}"),
+            Self::True => write!(f, "OP_TRUE"),
+            Self::False => write!(f, "OP_FALSE"),
             Self::None => write!(f, "OP_NONE"),
             Self::Negate => write!(f, "OP_NEGATE"),
             Self::Add => write!(f, "OP_ADD"),
