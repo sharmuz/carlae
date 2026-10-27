@@ -59,6 +59,16 @@ impl<'a> Vm<'a> {
                         )));
                     }
                 }
+                OpCode::Not => {
+                    if let Some(val) = self.stack.pop() {
+                        self.stack.push(Value::Boolean(!val.is_truthy()))
+                    } else {
+                        return Err(CarlaeError::Runtime(format!(
+                            "[Line {}]: Missing operand for `not`",
+                            self.chunk.lines[self.ip - 1]
+                        )));
+                    }
+                }
                 op @ (OpCode::Add | OpCode::Subtract | OpCode::Multiply | OpCode::Divide) => {
                     self.binary_op(&op)?
                 }

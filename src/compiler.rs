@@ -55,6 +55,7 @@ impl Compiler {
 
         match &operator.kind {
             TokenKind::Minus => chunk.add_op(OpCode::Negate, operator.line),
+            TokenKind::Not => chunk.add_op(OpCode::Not, operator.line),
             op => {
                 return Err(CarlaeError::Compile(format!(
                     "[Line {}]: Invalid unary operator {op:?}.",

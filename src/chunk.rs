@@ -1,4 +1,4 @@
-use std::fmt;
+use std::fmt::{self, write};
 
 use crate::value::Value;
 
@@ -44,6 +44,7 @@ impl fmt::Display for Chunk {
                 | OpCode::False
                 | OpCode::None
                 | OpCode::Negate
+                | OpCode::Not
                 | OpCode::Add
                 | OpCode::Subtract
                 | OpCode::Multiply
@@ -62,6 +63,7 @@ pub enum OpCode {
     False,
     None,
     Negate,
+    Not,
     Add,
     Subtract,
     Multiply,
@@ -77,6 +79,7 @@ impl fmt::Display for OpCode {
             Self::False => write!(f, "OP_FALSE"),
             Self::None => write!(f, "OP_NONE"),
             Self::Negate => write!(f, "OP_NEGATE"),
+            Self::Not => write!(f, "OP_NOT"),
             Self::Add => write!(f, "OP_ADD"),
             Self::Subtract => write!(f, "OP_SUBTRACT"),
             Self::Multiply => write!(f, "OP_MULTIPLY"),
