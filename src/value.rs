@@ -31,4 +31,13 @@ impl Value {
             Self::None => Err(CarlaeError::Runtime("Cannot convert None to float".into())),
         }
     }
+
+    pub fn is_truthy(&self) -> bool {
+        match self {
+            Self::Boolean(b) => *b,
+            Self::Number(n) => *n != 0.0,
+            Self::String(s) => !s.is_empty(),
+            Self::None => false,
+        }
+    }
 }
