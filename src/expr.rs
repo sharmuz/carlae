@@ -5,7 +5,10 @@ use crate::token::Token;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Expr {
-    Literal(LiteralValue),
+    Literal {
+        value: LiteralValue,
+        token: Token,
+    },
     Unary {
         operator: Token,
         right: Box<Expr>,
@@ -32,7 +35,7 @@ pub enum Expr {
 impl std::fmt::Display for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Literal(lit) => write!(f, "{lit}"),
+            Self::Literal { value, token } => write!(f, "{value}"),
             Self::Unary { operator, right } => write!(f, "({} {})", operator.lexeme, right),
             Self::Binary {
                 operator,
@@ -108,8 +111,14 @@ mod tests {
             lexeme: "+".into(),
             line: 1,
         };
-        let left = Expr::Literal(LiteralValue::Number(1.0));
-        let right = Expr::Literal(LiteralValue::Number(2.0));
+        let left = Expr::Literal {
+            value: LiteralValue::Number(1.0),
+            token: Token::new(TokenKind::Number(1.0), "1".into(), 1),
+        };
+        let right = Expr::Literal {
+            value: LiteralValue::Number(2.0),
+            token: Token::new(TokenKind::Number(2.0), "2".into(), 1),
+        };
         let expr = Expr::Binary {
             left: Box::new(left),
             operator,

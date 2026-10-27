@@ -485,11 +485,26 @@ impl Parser {
     fn primary(&mut self) -> Result<Expr, CarlaeError> {
         if let Some(t) = self.peek() {
             let val = match &t.kind {
-                TokenKind::Number(n) => Expr::Literal(LiteralValue::Number(*n)),
-                TokenKind::String(s) => Expr::Literal(LiteralValue::String(s.clone())),
-                TokenKind::True => Expr::Literal(LiteralValue::Boolean(true)),
-                TokenKind::False => Expr::Literal(LiteralValue::Boolean(false)),
-                TokenKind::None => Expr::Literal(LiteralValue::None),
+                TokenKind::Number(n) => Expr::Literal {
+                    value: LiteralValue::Number(*n),
+                    token: t.clone(),
+                },
+                TokenKind::String(s) => Expr::Literal {
+                    value: LiteralValue::String(s.clone()),
+                    token: t.clone(),
+                },
+                TokenKind::True => Expr::Literal {
+                    value: LiteralValue::Boolean(true),
+                    token: t.clone(),
+                },
+                TokenKind::False => Expr::Literal {
+                    value: LiteralValue::Boolean(false),
+                    token: t.clone(),
+                },
+                TokenKind::None => Expr::Literal {
+                    value: LiteralValue::None,
+                    token: t.clone(),
+                },
                 TokenKind::Identifier(_) => Expr::Variable(t.clone()),
                 TokenKind::LeftParen => {
                     self.advance();
@@ -587,6 +602,62 @@ impl Parser {
 mod tests {
     use super::*;
 
+    fn number(value: f64, line: usize) -> Expr {
+        Expr::Literal {
+            value: LiteralValue::Number(value),
+            token: Token::new(TokenKind::Number(value), value.to_string(), line),
+        }
+    }
+
+    fn boolean(value: bool, line: usize) -> Expr {
+        let (kind, lexeme) = if value {
+            (TokenKind::True, "True")
+        } else {
+            (TokenKind::False, "False")
+        };
+        Expr::Literal {
+            value: LiteralValue::Boolean(value),
+            token: Token::new(kind, lexeme.into(), line),
+        }
+    }
+
+    #[test]
+    fn primary_preserves_literal_tokens() {
+        let cases = [
+            (
+                Token::new(TokenKind::Number(12.5), "12.50".into(), 7),
+                LiteralValue::Number(12.5),
+            ),
+            (
+                Token::new(TokenKind::String("hello".into()), "\"hello\"".into(), 11),
+                LiteralValue::String("hello".into()),
+            ),
+            (
+                Token::new(TokenKind::True, "True".into(), 15),
+                LiteralValue::Boolean(true),
+            ),
+            (
+                Token::new(TokenKind::False, "False".into(), 18),
+                LiteralValue::Boolean(false),
+            ),
+            (
+                Token::new(TokenKind::None, "None".into(), 21),
+                LiteralValue::None,
+            ),
+        ];
+
+        for (token, value) in cases {
+            let mut parser = Parser::new(vec![
+                token.clone(),
+                Token::new(TokenKind::Eof, "".into(), token.line),
+            ]);
+
+            let expr = parser.primary().expect("Literal is parsed");
+
+            assert_eq!(expr, Expr::Literal { value, token });
+        }
+    }
+
     #[test]
     fn parses_if_statement_with_inline_suite_no_else() {
         let mut parser = Parser::new(vec![
@@ -603,13 +674,13 @@ mod tests {
         ]);
         let expected = Stmt::If(IfClause {
             cond: Expr::Binary {
-                left: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
+                left: Box::new(number(1.0, 1)),
                 operator: Token::new(TokenKind::Greater, ">".into(), 1),
-                right: Box::new(Expr::Literal(LiteralValue::Number(0.0))),
+                right: Box::new(number(0.0, 1)),
             },
             then: vec![Stmt::Variable(Assignment {
                 name: Token::new(TokenKind::Identifier("x".into()), "x".into(), 1),
-                initializer: Expr::Literal(LiteralValue::Number(1.0)),
+                initializer: number(1.0, 1),
             })],
             r#else: None,
         });
@@ -643,14 +714,14 @@ mod tests {
             Token::new(TokenKind::Eof, "".into(), 4),
         ]);
         let expected = Stmt::If(IfClause {
-            cond: Expr::Literal(LiteralValue::Boolean(true)),
+            cond: boolean(true, 1),
             then: vec![Stmt::Variable(Assignment {
                 name: Token::new(TokenKind::Identifier("x".into()), "x".into(), 2),
-                initializer: Expr::Literal(LiteralValue::Number(1.0)),
+                initializer: number(1.0, 2),
             })],
             r#else: Some(vec![Stmt::Variable(Assignment {
                 name: Token::new(TokenKind::Identifier("x".into()), "x".into(), 3),
-                initializer: Expr::Literal(LiteralValue::Number(0.0)),
+                initializer: number(0.0, 3),
             })]),
         });
 
@@ -684,7 +755,7 @@ mod tests {
             body: vec![
                 Stmt::Variable(Assignment {
                     name: Token::new(TokenKind::Identifier("x".into()), "x".into(), 2),
-                    initializer: Expr::Literal(LiteralValue::Number(0.0)),
+                    initializer: number(0.0, 2),
                 }),
                 Stmt::Print(PrintConfig {
                     exprs: vec![Expr::Variable(Token::new(
@@ -715,9 +786,9 @@ mod tests {
             Token::new(TokenKind::Eof, "".into(), 2),
         ]);
         let exprs = vec![Expr::Binary {
-            left: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
+            left: Box::new(number(1.0, 1)),
             operator: Token::new(TokenKind::Plus, "+".into(), 1),
-            right: Box::new(Expr::Literal(LiteralValue::Number(2.0))),
+            right: Box::new(number(2.0, 1)),
         }];
         let expected = Stmt::Print(PrintConfig {
             exprs,
@@ -745,11 +816,11 @@ mod tests {
         ]);
         let exprs = vec![
             Expr::Binary {
-                left: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
+                left: Box::new(number(1.0, 1)),
                 operator: Token::new(TokenKind::Plus, "+".into(), 1),
-                right: Box::new(Expr::Literal(LiteralValue::Number(2.0))),
+                right: Box::new(number(2.0, 1)),
             },
-            Expr::Literal(LiteralValue::Number(3.0)),
+            number(3.0, 1),
         ];
         let expected = Stmt::Print(PrintConfig {
             exprs,
@@ -792,9 +863,9 @@ mod tests {
             Token::new(TokenKind::Eof, "".into(), 2),
         ]);
         let expected = Expr::Binary {
-            left: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
+            left: Box::new(number(1.0, 1)),
             operator: Token::new(TokenKind::Plus, "+".into(), 1),
-            right: Box::new(Expr::Literal(LiteralValue::Number(2.0))),
+            right: Box::new(number(2.0, 1)),
         };
 
         let program = parser
@@ -814,9 +885,9 @@ mod tests {
             Token::new(TokenKind::Eof, "".into(), 2),
         ]);
         let expected = Expr::Logical {
-            left: Box::new(Expr::Literal(LiteralValue::Boolean(true))),
+            left: Box::new(boolean(true, 1)),
             operator: Token::new(TokenKind::Or, "or".into(), 1),
-            right: Box::new(Expr::Literal(LiteralValue::Boolean(false))),
+            right: Box::new(boolean(false, 1)),
         };
 
         let expr = parser
@@ -836,9 +907,9 @@ mod tests {
             Token::new(TokenKind::Eof, "".into(), 2),
         ]);
         let expected = Expr::Binary {
-            left: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
+            left: Box::new(number(1.0, 1)),
             operator: Token::new(TokenKind::Plus, "+".into(), 1),
-            right: Box::new(Expr::Literal(LiteralValue::Number(2.0))),
+            right: Box::new(number(2.0, 1)),
         };
 
         let expr = parser
@@ -860,9 +931,9 @@ mod tests {
             Token::new(TokenKind::Eof, "".into(), 2),
         ]);
         let expected = Expr::Grouping(Box::new(Expr::Binary {
-            left: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
+            left: Box::new(number(1.0, 1)),
             operator: Token::new(TokenKind::Plus, "+".into(), 1),
-            right: Box::new(Expr::Literal(LiteralValue::Number(2.0))),
+            right: Box::new(number(2.0, 1)),
         }));
 
         let expr = parser
@@ -884,12 +955,12 @@ mod tests {
             Token::new(TokenKind::Eof, "".into(), 2),
         ]);
         let expected = Expr::Binary {
-            left: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
+            left: Box::new(number(1.0, 1)),
             operator: Token::new(TokenKind::Plus, "+".into(), 1),
             right: Box::new(Expr::Binary {
-                left: Box::new(Expr::Literal(LiteralValue::Number(2.0))),
+                left: Box::new(number(2.0, 1)),
                 operator: Token::new(TokenKind::Star, "*".into(), 1),
-                right: Box::new(Expr::Literal(LiteralValue::Number(3.0))),
+                right: Box::new(number(3.0, 1)),
             }),
         };
 
@@ -913,12 +984,12 @@ mod tests {
         ]);
         let expected = Expr::Binary {
             left: Box::new(Expr::Binary {
-                left: Box::new(Expr::Literal(LiteralValue::Number(8.0))),
+                left: Box::new(number(8.0, 1)),
                 operator: Token::new(TokenKind::Minus, "-".into(), 1),
-                right: Box::new(Expr::Literal(LiteralValue::Number(3.0))),
+                right: Box::new(number(3.0, 1)),
             }),
             operator: Token::new(TokenKind::Minus, "-".into(), 1),
-            right: Box::new(Expr::Literal(LiteralValue::Number(2.0))),
+            right: Box::new(number(2.0, 1)),
         };
 
         let expr = parser
@@ -946,9 +1017,9 @@ mod tests {
             right: Box::new(Expr::Unary {
                 operator: Token::new(TokenKind::Minus, "-".into(), 1),
                 right: Box::new(Expr::Grouping(Box::new(Expr::Binary {
-                    left: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
+                    left: Box::new(number(1.0, 1)),
                     operator: Token::new(TokenKind::Plus, "+".into(), 1),
-                    right: Box::new(Expr::Literal(LiteralValue::Number(2.0))),
+                    right: Box::new(number(2.0, 1)),
                 }))),
             }),
         };
@@ -976,9 +1047,9 @@ mod tests {
             right: Box::new(Expr::Unary {
                 operator: Token::new(TokenKind::Not, "not".into(), 1),
                 right: Box::new(Expr::Binary {
-                    left: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
+                    left: Box::new(number(1.0, 1)),
                     operator: Token::new(TokenKind::EqualEqual, "==".into(), 1),
-                    right: Box::new(Expr::Literal(LiteralValue::Number(1.0))),
+                    right: Box::new(number(1.0, 1)),
                 }),
             }),
         };

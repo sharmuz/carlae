@@ -6,7 +6,7 @@ use crate::token::{Token, TokenKind};
 impl Interpreter {
     pub fn evaluate(&mut self, expr: &Expr) -> Result<LiteralValue, CarlaeError> {
         match expr {
-            Expr::Literal(val) => Ok(val.clone()),
+            Expr::Literal { value, token } => Ok(value.clone()),
             Expr::Unary { operator, right } => self.eval_unary(operator, right),
             Expr::Binary {
                 left,
@@ -371,15 +371,29 @@ mod tests {
     use super::*;
 
     fn number(value: f64) -> Expr {
-        Expr::Literal(LiteralValue::Number(value))
+        Expr::Literal {
+            value: LiteralValue::Number(value),
+            token: Token::new(TokenKind::Number(value), value.to_string(), 1),
+        }
     }
 
     fn boolean(value: bool) -> Expr {
-        Expr::Literal(LiteralValue::Boolean(value))
+        let (kind, lexeme) = if value {
+            (TokenKind::True, "True")
+        } else {
+            (TokenKind::False, "False")
+        };
+        Expr::Literal {
+            value: LiteralValue::Boolean(value),
+            token: Token::new(kind, lexeme.into(), 1),
+        }
     }
 
     fn string(value: &str) -> Expr {
-        Expr::Literal(LiteralValue::String(value.into()))
+        Expr::Literal {
+            value: LiteralValue::String(value.into()),
+            token: Token::new(TokenKind::String(value.into()), format!("\"{value}\""), 1),
+        }
     }
 
     fn unary(kind: TokenKind, lexeme: &str, right: Expr) -> Expr {
@@ -542,7 +556,10 @@ mod tests {
             (string(""), LiteralValue::Boolean(true)),
             (string("hello"), LiteralValue::Boolean(false)),
             (
-                Expr::Literal(LiteralValue::None),
+                Expr::Literal {
+                    value: LiteralValue::None,
+                    token: Token::new(TokenKind::None, "None".into(), 1),
+                },
                 LiteralValue::Boolean(true),
             ),
         ];

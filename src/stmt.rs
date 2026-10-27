@@ -135,12 +135,19 @@ mod tests {
                     1,
                 ))),
                 operator: Token::new(TokenKind::EqualEqual, "==".into(), 1),
-                right: Box::new(Expr::Literal(LiteralValue::Number(0.0))),
+                right: Box::new(Expr::Literal {
+                    value: LiteralValue::Number(0.0),
+                    token: Token::new(TokenKind::Number(0.0), "0".into(), 1),
+                }),
             },
-            then: vec![Stmt::Expression(Expr::Literal(LiteralValue::Boolean(true)))],
-            r#else: Some(vec![Stmt::Expression(Expr::Literal(
-                LiteralValue::Boolean(false),
-            ))]),
+            then: vec![Stmt::Expression(Expr::Literal {
+                value: LiteralValue::Boolean(true),
+                token: Token::new(TokenKind::True, "True".into(), 2),
+            })],
+            r#else: Some(vec![Stmt::Expression(Expr::Literal {
+                value: LiteralValue::Boolean(false),
+                token: Token::new(TokenKind::False, "False".into(), 4),
+            })]),
         });
         let expected = String::from("if (== x 0):\n    True\nelse:\n    False\n");
 
@@ -151,8 +158,14 @@ mod tests {
     fn print_statement_displays_multiple_exprs() {
         let print_stmt = Stmt::Print(PrintConfig {
             exprs: vec![
-                Expr::Literal(LiteralValue::Number(1.0)),
-                Expr::Literal(LiteralValue::Number(2.0)),
+                Expr::Literal {
+                    value: LiteralValue::Number(1.0),
+                    token: Token::new(TokenKind::Number(1.0), "1".into(), 1),
+                },
+                Expr::Literal {
+                    value: LiteralValue::Number(2.0),
+                    token: Token::new(TokenKind::Number(2.0), "2".into(), 1),
+                },
             ],
             mode: PrintMode::FinalNewline,
         });

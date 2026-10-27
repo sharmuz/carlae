@@ -33,7 +33,7 @@ impl Compiler {
 
     fn expression(&self, chunk: &mut Chunk, expr: &Expr) -> Result<(), CarlaeError> {
         match expr {
-            Expr::Literal(val) => self.literal(chunk, val),
+            Expr::Literal { value, token } => self.literal(chunk, value),
             Expr::Unary { operator, right } => self.unary(chunk, operator, right),
             Expr::Binary {
                 left,
