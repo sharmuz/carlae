@@ -69,9 +69,11 @@ impl<'a> Vm<'a> {
                         )));
                     }
                 }
-                op @ (OpCode::Add | OpCode::Subtract | OpCode::Multiply | OpCode::Divide) => {
-                    self.binary_op(&op)?
-                }
+                op @ (OpCode::Add
+                | OpCode::Subtract
+                | OpCode::Multiply
+                | OpCode::Divide
+                | OpCode::Equal) => self.binary_op(&op)?,
                 OpCode::Return => {
                     if let Some(val) = self.stack.pop() {
                         println!("{val}");
@@ -184,6 +186,7 @@ impl<'a> Vm<'a> {
                     )));
                 }
             },
+            OpCode::Equal => Value::Boolean(left.as_number()? == right.as_number()?),
             op => {
                 return Err(CarlaeError::Runtime(format!(
                     "[Line {}]: Invalid binary operator {op}",

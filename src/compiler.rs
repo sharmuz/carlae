@@ -82,6 +82,7 @@ impl Compiler {
             TokenKind::Minus => chunk.add_op(OpCode::Subtract, operator.line),
             TokenKind::Star => chunk.add_op(OpCode::Multiply, operator.line),
             TokenKind::Slash => chunk.add_op(OpCode::Divide, operator.line),
+            TokenKind::EqualEqual => chunk.add_op(OpCode::Equal, operator.line),
             op => {
                 return Err(CarlaeError::Compile(format!(
                     "[Line {}]: Invalid binary operator {op:?}.",
