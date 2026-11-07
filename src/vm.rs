@@ -188,9 +188,29 @@ impl<'a> Vm<'a> {
                     )));
                 }
             },
-            OpCode::Equal => Value::Boolean(left.as_number()? == right.as_number()?),
-            OpCode::Greater => Value::Boolean(left.as_number()? > right.as_number()?),
-            OpCode::Less => Value::Boolean(left.as_number()? < right.as_number()?),
+            OpCode::Equal => match (left, right) {
+                (Value::None, Value::None) => Value::Boolean(true),
+                (Value::None, _) | (_, Value::None) => Value::Boolean(false),
+                (x, y) => Value::Boolean(x.as_number()? == y.as_number()?),
+            },
+            OpCode::Greater => match (left, right) {
+                (Value::None, _) | (_, Value::None) => {
+                    return Err(CarlaeError::Runtime(format!(
+                        "[Line {}]: Invalid argument to binary operator >: None",
+                        self.chunk.lines[self.ip - 1]
+                    )));
+                }
+                (x, y) => Value::Boolean(x.as_number()? > y.as_number()?),
+            },
+            OpCode::Less => match (left, right) {
+                (Value::None, _) | (_, Value::None) => {
+                    return Err(CarlaeError::Runtime(format!(
+                        "[Line {}]: Invalid argument to binary operator <: None",
+                        self.chunk.lines[self.ip - 1]
+                    )));
+                }
+                (x, y) => Value::Boolean(x.as_number()? < y.as_number()?),
+            },
             op => {
                 return Err(CarlaeError::Runtime(format!(
                     "[Line {}]: Invalid binary operator {op}",
