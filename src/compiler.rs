@@ -83,8 +83,20 @@ impl Compiler {
             TokenKind::Star => chunk.add_op(OpCode::Multiply, operator.line),
             TokenKind::Slash => chunk.add_op(OpCode::Divide, operator.line),
             TokenKind::EqualEqual => chunk.add_op(OpCode::Equal, operator.line),
+            TokenKind::BangEqual => {
+                chunk.add_op(OpCode::Equal, operator.line);
+                chunk.add_op(OpCode::Not, operator.line);
+            }
             TokenKind::Greater => chunk.add_op(OpCode::Greater, operator.line),
+            TokenKind::GreaterEqual => {
+                chunk.add_op(OpCode::Less, operator.line);
+                chunk.add_op(OpCode::Not, operator.line);
+            }
             TokenKind::Less => chunk.add_op(OpCode::Less, operator.line),
+            TokenKind::LessEqual => {
+                chunk.add_op(OpCode::Greater, operator.line);
+                chunk.add_op(OpCode::Not, operator.line);
+            }
             op => {
                 return Err(CarlaeError::Compile(format!(
                     "[Line {}]: Invalid binary operator {op:?}.",
