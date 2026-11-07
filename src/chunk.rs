@@ -47,6 +47,7 @@ impl fmt::Display for Chunk {
                 | OpCode::Not
                 | OpCode::Equal
                 | OpCode::Greater
+                | OpCode::Less
                 | OpCode::Add
                 | OpCode::Subtract
                 | OpCode::Multiply
@@ -68,6 +69,7 @@ pub enum OpCode {
     Not,
     Equal,
     Greater,
+    Less,
     Add,
     Subtract,
     Multiply,
@@ -86,6 +88,7 @@ impl fmt::Display for OpCode {
             Self::Not => write!(f, "OP_NOT"),
             Self::Equal => write!(f, "OP_EQUAL"),
             Self::Greater => write!(f, "OP_GREATER"),
+            Self::Less => write!(f, "OP_LESS"),
             Self::Add => write!(f, "OP_ADD"),
             Self::Subtract => write!(f, "OP_SUBTRACT"),
             Self::Multiply => write!(f, "OP_MULTIPLY"),

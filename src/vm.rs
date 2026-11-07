@@ -74,7 +74,8 @@ impl<'a> Vm<'a> {
                 | OpCode::Multiply
                 | OpCode::Divide
                 | OpCode::Equal
-                | OpCode::Greater) => self.binary_op(&op)?,
+                | OpCode::Greater
+                | OpCode::Less) => self.binary_op(&op)?,
                 OpCode::Return => {
                     if let Some(val) = self.stack.pop() {
                         println!("{val}");
@@ -189,6 +190,7 @@ impl<'a> Vm<'a> {
             },
             OpCode::Equal => Value::Boolean(left.as_number()? == right.as_number()?),
             OpCode::Greater => Value::Boolean(left.as_number()? > right.as_number()?),
+            OpCode::Less => Value::Boolean(left.as_number()? < right.as_number()?),
             op => {
                 return Err(CarlaeError::Runtime(format!(
                     "[Line {}]: Invalid binary operator {op}",
