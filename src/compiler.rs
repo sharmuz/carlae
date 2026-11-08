@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::chunk::{Chunk, OpCode};
 use crate::error::CarlaeError;
 use crate::expr::{Expr, LiteralValue};
@@ -128,6 +130,7 @@ impl Compiler {
                 chunk.add_op(OpCode::None, token.line);
                 Ok(())
             }
+            LiteralValue::String(s) => self.string(chunk, &s, token),
             v => Err(CarlaeError::Compile(format!(
                 "[Line {}]: Unknown literal value {v}",
                 token.line
@@ -137,6 +140,12 @@ impl Compiler {
 
     fn number(&self, chunk: &mut Chunk, n: f64, token: &Token) -> Result<(), CarlaeError> {
         let idx = chunk.add_constant(Value::Number(n));
+        chunk.add_op(OpCode::Constant(idx), token.line);
+        Ok(())
+    }
+
+    fn string(&self, chunk: &mut Chunk, s: &str, token: &Token) -> Result<(), CarlaeError> {
+        let idx = chunk.add_constant(Value::String(Rc::new(s.to_string())));
         chunk.add_op(OpCode::Constant(idx), token.line);
         Ok(())
     }
