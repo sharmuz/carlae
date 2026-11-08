@@ -191,6 +191,7 @@ impl<'a> Vm<'a> {
             OpCode::Equal => match (left, right) {
                 (Value::None, Value::None) => Value::Boolean(true),
                 (Value::None, _) | (_, Value::None) => Value::Boolean(false),
+                (Value::String(s), Value::String(t)) => Value::Boolean(s == t),
                 (x, y) => Value::Boolean(x.as_number()? == y.as_number()?),
             },
             OpCode::Greater => match (left, right) {
@@ -200,6 +201,7 @@ impl<'a> Vm<'a> {
                         self.chunk.lines[self.ip - 1]
                     )));
                 }
+                (Value::String(s), Value::String(t)) => Value::Boolean(s > t),
                 (x, y) => Value::Boolean(x.as_number()? > y.as_number()?),
             },
             OpCode::Less => match (left, right) {
@@ -209,6 +211,7 @@ impl<'a> Vm<'a> {
                         self.chunk.lines[self.ip - 1]
                     )));
                 }
+                (Value::String(s), Value::String(t)) => Value::Boolean(s < t),
                 (x, y) => Value::Boolean(x.as_number()? < y.as_number()?),
             },
             op => {
