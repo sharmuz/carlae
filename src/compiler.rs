@@ -130,7 +130,7 @@ impl Compiler {
                 chunk.add_op(OpCode::None, token.line);
                 Ok(())
             }
-            LiteralValue::String(s) => self.string(chunk, &s, token),
+            LiteralValue::String(s) => self.string(chunk, s, token),
             v => Err(CarlaeError::Compile(format!(
                 "[Line {}]: Unknown literal value {v}",
                 token.line
