@@ -76,6 +76,14 @@ impl<'a> Vm<'a> {
                 | OpCode::Equal
                 | OpCode::Greater
                 | OpCode::Less) => self.binary_op(&op)?,
+                OpCode::Print => {
+                    // TODO: Print multiple exprs
+                    if let Some(val) = self.stack.pop() {
+                        print!("{val}");
+                    }
+                    // TODO: Respect PrintMode::NoNewLine
+                    println!();
+                }
                 OpCode::Return => {
                     if let Some(val) = self.stack.pop() {
                         println!("{val}");

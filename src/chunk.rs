@@ -40,19 +40,7 @@ impl fmt::Display for Chunk {
 
             match op {
                 OpCode::Constant(i) => writeln!(f, "{op} {}", self.constants[*i])?,
-                OpCode::True
-                | OpCode::False
-                | OpCode::None
-                | OpCode::Negate
-                | OpCode::Not
-                | OpCode::Equal
-                | OpCode::Greater
-                | OpCode::Less
-                | OpCode::Add
-                | OpCode::Subtract
-                | OpCode::Multiply
-                | OpCode::Divide
-                | OpCode::Return => writeln!(f, "{op}")?,
+                o => writeln!(f, "{o}")?,
             }
         }
         Ok(())
@@ -75,6 +63,7 @@ pub enum OpCode {
     Multiply,
     Divide,
     Return,
+    Print,
 }
 
 impl fmt::Display for OpCode {
@@ -94,6 +83,7 @@ impl fmt::Display for OpCode {
             Self::Multiply => write!(f, "OP_MULTIPLY"),
             Self::Divide => write!(f, "OP_DIVIDE"),
             Self::Return => write!(f, "OP_RETURN"),
+            Self::Print => write!(f, "OP_PRINT"),
         }
     }
 }

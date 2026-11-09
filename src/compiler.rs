@@ -3,7 +3,7 @@ use std::rc::Rc;
 use crate::chunk::{Chunk, OpCode};
 use crate::error::CarlaeError;
 use crate::expr::{Expr, LiteralValue};
-use crate::stmt::Stmt;
+use crate::stmt::{PrintConfig, Stmt};
 use crate::token::{Token, TokenKind};
 use crate::value::Value;
 
@@ -33,9 +33,20 @@ impl Compiler {
 
     fn statement(&self, chunk: &mut Chunk, stmt: &Stmt) -> Result<(), CarlaeError> {
         match stmt {
+            Stmt::Print(cfg) => self.print_stmt(chunk, cfg),
             Stmt::Expression(expr) => self.expression(chunk, expr),
             s => Err(CarlaeError::Compile(format!("Unknown statement {s}"))),
         }
+    }
+
+    fn print_stmt(&self, chunk: &mut Chunk, cfg: &PrintConfig) -> Result<(), CarlaeError> {
+        for expr in &cfg.exprs {
+            self.expression(chunk, expr)?;
+        }
+        // TODO: Get actual line number
+        chunk.add_op(OpCode::Print, 0);
+
+        Ok(())
     }
 
     fn expression(&self, chunk: &mut Chunk, expr: &Expr) -> Result<(), CarlaeError> {
