@@ -43,10 +43,10 @@ impl Compiler {
         for expr in &cfg.exprs {
             self.expression(chunk, expr)?;
         }
-
+        let n = cfg.exprs.len();
         match cfg.mode {
-            PrintMode::FinalNewline => chunk.add_op(OpCode::Println, cfg.keyword.line),
-            PrintMode::NoNewline => chunk.add_op(OpCode::Print, cfg.keyword.line),
+            PrintMode::FinalNewline => chunk.add_op(OpCode::Println(n), cfg.keyword.line),
+            PrintMode::NoNewline => chunk.add_op(OpCode::Print(n), cfg.keyword.line),
         }
 
         Ok(())

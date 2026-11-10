@@ -76,12 +76,23 @@ impl<'a> Vm<'a> {
                 | OpCode::Equal
                 | OpCode::Greater
                 | OpCode::Less) => self.binary_op(&op)?,
-                op @ (OpCode::Print | OpCode::Println) => {
-                    // TODO: Print multiple exprs
-                    if let Some(val) = self.stack.pop() {
-                        print!("{val}");
+                op @ (OpCode::Print(n) | OpCode::Println(n)) => {
+                    let first_arg = self.stack.len() - n;
+                    for i in first_arg..self.stack.len() {
+                        if let Some(val) = self.stack.get(i) {
+                            if i != first_arg {
+                                print!(" ");
+                            }
+                            print!("{val}");
+                        } else {
+                            return Err(CarlaeError::Runtime(format!(
+                                "[Line {}]: Error executing `print` on given args",
+                                self.chunk.lines[self.ip - 1]
+                            )));
+                        }
                     }
-                    if matches!(op, OpCode::Println) {
+                    self.stack.truncate(first_arg);
+                    if matches!(op, OpCode::Println(_)) {
                         println!();
                     }
                 }

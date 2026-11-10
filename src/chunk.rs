@@ -63,8 +63,8 @@ pub enum OpCode {
     Multiply,
     Divide,
     Return,
-    Print,
-    Println,
+    Print(usize),
+    Println(usize),
 }
 
 impl fmt::Display for OpCode {
@@ -84,8 +84,8 @@ impl fmt::Display for OpCode {
             Self::Multiply => write!(f, "OP_MULTIPLY"),
             Self::Divide => write!(f, "OP_DIVIDE"),
             Self::Return => write!(f, "OP_RETURN"),
-            Self::Print => write!(f, "OP_PRINT"),
-            Self::Println => write!(f, "OP_PRINTLN"),
+            Self::Print(i) => write!(f, "OP_PRINT    {i}"),
+            Self::Println(i) => write!(f, "OP_PRINTLN    {i}"),
         }
     }
 }
