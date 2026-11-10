@@ -47,7 +47,11 @@ impl std::fmt::Display for Stmt {
                 }
                 Ok(())
             }
-            Self::Print(PrintConfig { exprs, mode }) => {
+            Self::Print(PrintConfig {
+                keyword,
+                exprs,
+                mode,
+            }) => {
                 if let Some(e) = exprs.first() {
                     write!(f, "print {e}")?;
                     for e in exprs.iter().skip(1) {
@@ -97,6 +101,7 @@ pub struct WhileClause {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PrintConfig {
+    pub keyword: Token,
     pub exprs: Vec<Expr>,
     pub mode: PrintMode,
 }
@@ -157,6 +162,7 @@ mod tests {
     #[test]
     fn print_statement_displays_multiple_exprs() {
         let print_stmt = Stmt::Print(PrintConfig {
+            keyword: Token::new(TokenKind::Print, "print".into(), 1),
             exprs: vec![
                 Expr::Literal {
                     value: LiteralValue::Number(1.0),
@@ -177,6 +183,7 @@ mod tests {
     #[test]
     fn print_statement_displays_empty() {
         let print_stmt = Stmt::Print(PrintConfig {
+            keyword: Token::new(TokenKind::Print, "print".into(), 1),
             exprs: Vec::new(),
             mode: PrintMode::FinalNewline,
         });

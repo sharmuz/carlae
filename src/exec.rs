@@ -42,7 +42,11 @@ impl Interpreter {
                 }
                 Ok(())
             }
-            Stmt::Print(PrintConfig { exprs, mode }) => {
+            Stmt::Print(PrintConfig {
+                keyword,
+                exprs,
+                mode,
+            }) => {
                 if let Some(e) = exprs.first() {
                     print!("{}", self.evaluate(e)?)
                 }

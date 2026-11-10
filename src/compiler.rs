@@ -43,8 +43,7 @@ impl Compiler {
         for expr in &cfg.exprs {
             self.expression(chunk, expr)?;
         }
-        // TODO: Get actual line number
-        chunk.add_op(OpCode::Print, 0);
+        chunk.add_op(OpCode::Print, cfg.keyword.line);
 
         Ok(())
     }

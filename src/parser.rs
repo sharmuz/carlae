@@ -275,6 +275,7 @@ impl Parser {
     }
 
     fn print_stmt(&mut self, line: usize) -> Result<Stmt, CarlaeError> {
+        let keyword = self.previous().clone();
         let mut exprs: Vec<Expr> = Vec::new();
         let mut mode = PrintMode::FinalNewline;
 
@@ -293,7 +294,11 @@ impl Parser {
         }
         if self.current_matches(&[TokenKind::Newline]) {
             self.advance();
-            Ok(Stmt::Print(PrintConfig { exprs, mode }))
+            Ok(Stmt::Print(PrintConfig {
+                keyword,
+                exprs,
+                mode,
+            }))
         } else {
             Err(CarlaeError::Parsing(format!(
                 "[Line {line}] Invalid syntax for print statement",
@@ -758,6 +763,7 @@ mod tests {
                     initializer: number(0.0, 2),
                 }),
                 Stmt::Print(PrintConfig {
+                    keyword: Token::new(TokenKind::Print, "print".into(), 3),
                     exprs: vec![Expr::Variable(Token::new(
                         TokenKind::Identifier("x".into()),
                         "x".into(),
@@ -791,6 +797,7 @@ mod tests {
             right: Box::new(number(2.0, 1)),
         }];
         let expected = Stmt::Print(PrintConfig {
+            keyword: Token::new(TokenKind::Print, "print".into(), 1),
             exprs,
             mode: PrintMode::FinalNewline,
         });
@@ -823,6 +830,7 @@ mod tests {
             number(3.0, 1),
         ];
         let expected = Stmt::Print(PrintConfig {
+            keyword: Token::new(TokenKind::Print, "print".into(), 1),
             exprs,
             mode: PrintMode::FinalNewline,
         });
@@ -842,6 +850,7 @@ mod tests {
             Token::new(TokenKind::Eof, "".into(), 2),
         ]);
         let expected = Stmt::Print(PrintConfig {
+            keyword: Token::new(TokenKind::Print, "print".into(), 1),
             exprs: Vec::new(),
             mode: PrintMode::FinalNewline,
         });
