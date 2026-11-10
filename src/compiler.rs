@@ -3,7 +3,7 @@ use std::rc::Rc;
 use crate::chunk::{Chunk, OpCode};
 use crate::error::CarlaeError;
 use crate::expr::{Expr, LiteralValue};
-use crate::stmt::{PrintConfig, Stmt};
+use crate::stmt::{PrintConfig, PrintMode, Stmt};
 use crate::token::{Token, TokenKind};
 use crate::value::Value;
 
@@ -43,7 +43,11 @@ impl Compiler {
         for expr in &cfg.exprs {
             self.expression(chunk, expr)?;
         }
-        chunk.add_op(OpCode::Print, cfg.keyword.line);
+
+        match cfg.mode {
+            PrintMode::FinalNewline => chunk.add_op(OpCode::Println, cfg.keyword.line),
+            PrintMode::NoNewline => chunk.add_op(OpCode::Print, cfg.keyword.line),
+        }
 
         Ok(())
     }
