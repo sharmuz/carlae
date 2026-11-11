@@ -84,12 +84,7 @@ impl<'a> Vm<'a> {
                         .expect("All values to print present in stack.");
                     self.print_op(&op, first_arg)?
                 }
-                OpCode::Return => {
-                    if let Some(val) = self.stack.pop() {
-                        println!("{val}");
-                    }
-                    return Ok(());
-                }
+                OpCode::Return => return Ok(()),
                 op => return Err(CarlaeError::Runtime(format!("Unknown opcode: {op}"))),
             }
         }
