@@ -90,7 +90,7 @@ impl<'a> Vm<'a> {
                     }
                     return Ok(());
                 }
-                op => return Err(CarlaeError::Compile(format!("Unknown opcode: {op}"))),
+                op => return Err(CarlaeError::Runtime(format!("Unknown opcode: {op}"))),
             }
         }
 
