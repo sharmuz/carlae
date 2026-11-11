@@ -77,24 +77,12 @@ impl<'a> Vm<'a> {
                 | OpCode::Greater
                 | OpCode::Less) => self.binary_op(&op)?,
                 op @ (OpCode::Print(n) | OpCode::Println(n)) => {
-                    let first_arg = self.stack.len() - n;
-                    for i in first_arg..self.stack.len() {
-                        if let Some(val) = self.stack.get(i) {
-                            if i != first_arg {
-                                print!(" ");
-                            }
-                            print!("{val}");
-                        } else {
-                            return Err(CarlaeError::Runtime(format!(
-                                "[Line {}]: Error executing `print` on given args",
-                                self.chunk.lines[self.ip - 1]
-                            )));
-                        }
-                    }
-                    self.stack.truncate(first_arg);
-                    if matches!(op, OpCode::Println(_)) {
-                        println!();
-                    }
+                    let first_arg = self
+                        .stack
+                        .len()
+                        .checked_sub(n)
+                        .expect("All values to print present in stack.");
+                    self.print_op(&op, first_arg)?
                 }
                 OpCode::Return => {
                     if let Some(val) = self.stack.pop() {
@@ -242,6 +230,25 @@ impl<'a> Vm<'a> {
             }
         };
         self.stack.push(res);
+
+        Ok(())
+    }
+
+    fn print_op(&mut self, op: &OpCode, start_idx: usize) -> Result<(), CarlaeError> {
+        for i in start_idx..self.stack.len() {
+            let val = self
+                .stack
+                .get(i)
+                .expect("Value to print present in stack at given index");
+            if i != start_idx {
+                print!(" ");
+            }
+            print!("{val}");
+        }
+        self.stack.truncate(start_idx);
+        if matches!(op, OpCode::Println(_)) {
+            println!();
+        }
 
         Ok(())
     }
