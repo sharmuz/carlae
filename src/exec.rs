@@ -47,11 +47,15 @@ impl Interpreter {
                 exprs,
                 mode,
             }) => {
-                if let Some(e) = exprs.first() {
-                    print!("{}", self.evaluate(e)?)
+                let vals = exprs
+                    .iter()
+                    .map(|e| self.evaluate(e))
+                    .collect::<Result<Vec<LiteralValue>, CarlaeError>>()?;
+                if let Some(e) = vals.first() {
+                    print!("{e}")
                 }
-                for e in exprs.iter().skip(1) {
-                    print!(" {}", self.evaluate(e)?)
+                for e in vals.iter().skip(1) {
+                    print!(" {e}")
                 }
                 if matches!(mode, PrintMode::FinalNewline) {
                     println!();
