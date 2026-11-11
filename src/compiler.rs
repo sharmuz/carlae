@@ -34,7 +34,7 @@ impl Compiler {
     fn statement(&self, chunk: &mut Chunk, stmt: &Stmt) -> Result<(), CarlaeError> {
         match stmt {
             Stmt::Print(cfg) => self.print_stmt(chunk, cfg),
-            Stmt::Expression(expr) => self.expression(chunk, expr),
+            Stmt::Expression(expr) => self.expression_stmt(chunk, expr),
             s => Err(CarlaeError::Compile(format!("Unknown statement {s}"))),
         }
     }
@@ -49,6 +49,13 @@ impl Compiler {
             PrintMode::NoNewline => chunk.add_op(OpCode::Print(n), cfg.keyword.line),
         }
 
+        Ok(())
+    }
+
+    fn expression_stmt(&self, chunk: &mut Chunk, expr: &Expr) -> Result<(), CarlaeError> {
+        self.expression(chunk, expr)?;
+        let line = chunk.lines.last().unwrap_or(&0);
+        chunk.add_op(OpCode::Pop, *line);
         Ok(())
     }
 

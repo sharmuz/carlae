@@ -65,6 +65,7 @@ pub enum OpCode {
     Return,
     Print(usize),
     Println(usize),
+    Pop,
 }
 
 impl fmt::Display for OpCode {
@@ -86,6 +87,7 @@ impl fmt::Display for OpCode {
             Self::Return => write!(f, "OP_RETURN"),
             Self::Print(i) => write!(f, "OP_PRINT    {i}"),
             Self::Println(i) => write!(f, "OP_PRINTLN    {i}"),
+            Self::Pop => write!(f, "OP_POP"),
         }
     }
 }
