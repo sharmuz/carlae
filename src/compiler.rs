@@ -84,6 +84,7 @@ impl Compiler {
                 right,
             } => self.binary(chunk, left, operator, right),
             Expr::Grouping(expr) => self.expression(chunk, expr),
+            Expr::Variable(token) => self.variable(chunk, token),
             e => Err(CarlaeError::Compile(format!("Unknown expression {e}"))),
         }
     }
@@ -183,6 +184,12 @@ impl Compiler {
     fn string(&self, chunk: &mut Chunk, s: &str, token: &Token) -> Result<(), CarlaeError> {
         let idx = chunk.add_constant(Value::String(Rc::new(s.to_string())));
         chunk.add_op(OpCode::Constant(idx), token.line);
+        Ok(())
+    }
+
+    fn variable(&self, chunk: &mut Chunk, token: &Token) -> Result<(), CarlaeError> {
+        let idx = chunk.add_constant(Value::String(Rc::new(token.lexeme.to_owned())));
+        chunk.add_op(OpCode::GetGlobal(idx), token.line);
         Ok(())
     }
 }

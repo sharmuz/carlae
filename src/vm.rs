@@ -88,6 +88,7 @@ impl<'a> Vm<'a> {
                     self.print_op(&op, first_arg)?
                 }
                 OpCode::AssignGlobal(c) => self.assign_global(c)?,
+                OpCode::GetGlobal(c) => self.get_global(c)?,
                 OpCode::Pop => _ = self.stack.pop(),
                 OpCode::Return => return Ok(()),
                 op => return Err(CarlaeError::Runtime(format!("Unknown opcode: {op}"))),
@@ -272,6 +273,28 @@ impl<'a> Vm<'a> {
             )));
         };
         self.globals.insert(name, value);
+        Ok(())
+    }
+
+    fn get_global(&mut self, index: usize) -> Result<(), CarlaeError> {
+        let name = match self.read_constant(index) {
+            Value::String(s) => s,
+            _ => {
+                return Err(CarlaeError::Runtime(format!(
+                    "[Line {}]: Invalid name for variable assignment",
+                    self.chunk.lines[self.ip - 1]
+                )));
+            }
+        };
+        match self.globals.get(name) {
+            Some(v) => self.stack.push(v.clone()),
+            None => {
+                return Err(CarlaeError::Runtime(format!(
+                    "[Line {}]: Variable `{name}` does not exist",
+                    self.chunk.lines[self.ip - 1]
+                )));
+            }
+        };
         Ok(())
     }
 }

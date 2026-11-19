@@ -67,6 +67,7 @@ pub enum OpCode {
     Println(usize),
     Pop,
     AssignGlobal(usize),
+    GetGlobal(usize),
 }
 
 impl fmt::Display for OpCode {
@@ -90,6 +91,7 @@ impl fmt::Display for OpCode {
             Self::Println(i) => write!(f, "OP_PRINTLN    {i}"),
             Self::Pop => write!(f, "OP_POP"),
             Self::AssignGlobal(i) => write!(f, "OP_ASSIGN_GLOBAL    {i}"),
+            Self::GetGlobal(i) => write!(f, "OP_GET_GLOBAL    {i}"),
         }
     }
 }
