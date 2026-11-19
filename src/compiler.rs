@@ -69,8 +69,8 @@ impl Compiler {
         initializer: &Expr,
     ) -> Result<(), CarlaeError> {
         self.expression(chunk, initializer)?;
-        self.string(chunk, &name.lexeme, name)?;
-        chunk.add_op(OpCode::AssignGlobal, name.line);
+        let idx = chunk.add_constant(Value::String(Rc::new(name.lexeme.to_owned())));
+        chunk.add_op(OpCode::AssignGlobal(idx), name.line);
         Ok(())
     }
 

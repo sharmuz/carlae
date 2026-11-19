@@ -87,7 +87,7 @@ impl<'a> Vm<'a> {
                         .expect("All values to print present in stack.");
                     self.print_op(&op, first_arg)?
                 }
-                OpCode::AssignGlobal => self.assign_global()?,
+                OpCode::AssignGlobal(c) => self.assign_global(c)?,
                 OpCode::Pop => _ = self.stack.pop(),
                 OpCode::Return => return Ok(()),
                 op => return Err(CarlaeError::Runtime(format!("Unknown opcode: {op}"))),
@@ -253,18 +253,12 @@ impl<'a> Vm<'a> {
         Ok(())
     }
 
-    fn assign_global(&mut self) -> Result<(), CarlaeError> {
-        let name = match self.stack.pop() {
-            Some(Value::String(s)) => s,
-            Some(_) => {
-                return Err(CarlaeError::Runtime(format!(
-                    "[Line {}]: Invalid name for variable assignment",
-                    self.chunk.lines[self.ip - 1]
-                )));
-            }
+    fn assign_global(&mut self, index: usize) -> Result<(), CarlaeError> {
+        let name = match self.read_constant(index) {
+            Value::String(s) => s.clone(),
             _ => {
                 return Err(CarlaeError::Runtime(format!(
-                    "[Line {}]: Missing name for variable assignment",
+                    "[Line {}]: Invalid name for variable assignment",
                     self.chunk.lines[self.ip - 1]
                 )));
             }
