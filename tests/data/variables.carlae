@@ -1,0 +1,2 @@
+max_temp = 33
+print(1 + 1)

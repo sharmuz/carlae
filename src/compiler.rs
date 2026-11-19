@@ -3,7 +3,7 @@ use std::rc::Rc;
 use crate::chunk::{Chunk, OpCode};
 use crate::error::CarlaeError;
 use crate::expr::{Expr, LiteralValue};
-use crate::stmt::{PrintConfig, PrintMode, Stmt};
+use crate::stmt::{Assignment, PrintConfig, PrintMode, Stmt};
 use crate::token::{Token, TokenKind};
 use crate::value::Value;
 
@@ -35,6 +35,9 @@ impl Compiler {
         match stmt {
             Stmt::Print(cfg) => self.print_stmt(chunk, cfg),
             Stmt::Expression(expr) => self.expression_stmt(chunk, expr),
+            Stmt::Variable(Assignment { name, initializer }) => {
+                self.assignment_stmt(chunk, name, initializer)
+            }
             s => Err(CarlaeError::Compile(format!("Unknown statement {s}"))),
         }
     }
@@ -56,6 +59,18 @@ impl Compiler {
         self.expression(chunk, expr)?;
         let line = chunk.lines.last().unwrap_or(&0);
         chunk.add_op(OpCode::Pop, *line);
+        Ok(())
+    }
+
+    fn assignment_stmt(
+        &self,
+        chunk: &mut Chunk,
+        name: &Token,
+        initializer: &Expr,
+    ) -> Result<(), CarlaeError> {
+        self.expression(chunk, initializer)?;
+        self.string(chunk, &name.lexeme, name)?;
+        chunk.add_op(OpCode::AssignGlobal, name.line);
         Ok(())
     }
 

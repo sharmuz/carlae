@@ -1,13 +1,15 @@
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::chunk::{Chunk, OpCode};
 use crate::error::CarlaeError;
-use crate::value::Value;
+use crate::value::{self, Value};
 
 pub struct Vm<'a> {
     chunk: &'a Chunk,
     ip: usize,
     stack: Vec<Value>,
+    globals: HashMap<Rc<String>, Value>,
     debug_trace: bool,
 }
 
@@ -17,6 +19,7 @@ impl<'a> Vm<'a> {
             chunk,
             ip: 0,
             stack: Vec::new(),
+            globals: HashMap::new(),
             debug_trace,
         }
     }
@@ -84,6 +87,7 @@ impl<'a> Vm<'a> {
                         .expect("All values to print present in stack.");
                     self.print_op(&op, first_arg)?
                 }
+                OpCode::AssignGlobal => self.assign_global()?,
                 OpCode::Pop => _ = self.stack.pop(),
                 OpCode::Return => return Ok(()),
                 op => return Err(CarlaeError::Runtime(format!("Unknown opcode: {op}"))),
@@ -246,6 +250,34 @@ impl<'a> Vm<'a> {
             println!();
         }
 
+        Ok(())
+    }
+
+    fn assign_global(&mut self) -> Result<(), CarlaeError> {
+        let name = match self.stack.pop() {
+            Some(Value::String(s)) => s,
+            Some(_) => {
+                return Err(CarlaeError::Runtime(format!(
+                    "[Line {}]: Invalid name for variable assignment",
+                    self.chunk.lines[self.ip - 1]
+                )));
+            }
+            _ => {
+                return Err(CarlaeError::Runtime(format!(
+                    "[Line {}]: Missing name for variable assignment",
+                    self.chunk.lines[self.ip - 1]
+                )));
+            }
+        };
+        let value = if let Some(val) = self.stack.pop() {
+            val
+        } else {
+            return Err(CarlaeError::Runtime(format!(
+                "[Line {}]: Missing value for variable assignment",
+                self.chunk.lines[self.ip - 1]
+            )));
+        };
+        self.globals.insert(name, value);
         Ok(())
     }
 }
