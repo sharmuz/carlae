@@ -1,3 +1,9 @@
+# Testing re-assignment, should print 41.4
 max_temp = 33.3
 max_temp = 41.4
 print(max_temp)
+
+# Testing with strings
+my_snack = "crumpet"
+my_bevvy = "builder's tea"
+print(my_snack + " with a cuppa " + my_bevvy)
