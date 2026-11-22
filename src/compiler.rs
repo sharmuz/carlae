@@ -8,12 +8,23 @@ use crate::token::{Token, TokenKind};
 use crate::value::Value;
 
 pub struct Compiler {
+    locals: Vec<Local>,
+    scope_depth: usize,
     dump_code: bool,
+}
+
+struct Local {
+    name: Token,
+    depth: usize,
 }
 
 impl Compiler {
     pub fn new(dump_code: bool) -> Self {
-        Compiler { dump_code }
+        Compiler {
+            locals: Vec::new(),
+            scope_depth: 0,
+            dump_code,
+        }
     }
 
     pub fn compile(&self, ast: Vec<Stmt>) -> Result<Chunk, CarlaeError> {
