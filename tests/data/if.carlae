@@ -1,0 +1,7 @@
+x = 3
+y = 77
+if x > 2:
+    print "banana"
+if y < 10:
+    print "satsuma"
+print "mango"

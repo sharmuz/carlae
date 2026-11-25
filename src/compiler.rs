@@ -3,7 +3,7 @@ use std::rc::Rc;
 use crate::chunk::{Chunk, OpCode};
 use crate::error::CarlaeError;
 use crate::expr::{Expr, LiteralValue};
-use crate::stmt::{Assignment, PrintConfig, PrintMode, Stmt};
+use crate::stmt::{self, Assignment, IfClause, PrintConfig, PrintMode, Stmt};
 use crate::token::{Token, TokenKind};
 use crate::value::Value;
 
@@ -44,6 +44,7 @@ impl Compiler {
 
     fn statement(&self, chunk: &mut Chunk, stmt: &Stmt) -> Result<(), CarlaeError> {
         match stmt {
+            Stmt::If(clause) => self.if_stmt(chunk, clause),
             Stmt::Print(cfg) => self.print_stmt(chunk, cfg),
             Stmt::Expression(expr) => self.expression_stmt(chunk, expr),
             Stmt::Variable(Assignment { name, initializer }) => {
@@ -51,6 +52,28 @@ impl Compiler {
             }
             s => Err(CarlaeError::Compile(format!("Unknown statement {s}"))),
         }
+    }
+
+    fn if_stmt(&self, chunk: &mut Chunk, clause: &IfClause) -> Result<(), CarlaeError> {
+        // Call self.expression on clause.cond
+        self.expression(chunk, &clause.cond)?;
+
+        // chunk.add_op with JumpIfFalse with placeholder payload
+        chunk.add_op(
+            OpCode::JumpIfFalse(chunk.code.len() + 1),
+            *chunk.lines.last().unwrap_or(&0), // TODO: Get if keyword line num
+        );
+        let jump_idx = chunk.code.len() - 1;
+
+        // Call self.statement on all clause.then
+        for stmt in &clause.then {
+            self.statement(chunk, stmt)?;
+        }
+
+        // Patch chunk.code to set JumpIfFalse with correct payload
+        chunk.code[jump_idx] = OpCode::JumpIfFalse(chunk.code.len());
+
+        Ok(())
     }
 
     fn print_stmt(&self, chunk: &mut Chunk, cfg: &PrintConfig) -> Result<(), CarlaeError> {

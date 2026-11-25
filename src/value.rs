@@ -40,4 +40,8 @@ impl Value {
             Self::None => false,
         }
     }
+
+    pub fn is_falsey(&self) -> bool {
+        !self.is_truthy()
+    }
 }

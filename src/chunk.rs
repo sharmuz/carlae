@@ -68,6 +68,7 @@ pub enum OpCode {
     Pop,
     AssignGlobal(usize),
     GetGlobal(usize),
+    JumpIfFalse(usize),
 }
 
 impl fmt::Display for OpCode {
@@ -92,6 +93,7 @@ impl fmt::Display for OpCode {
             Self::Pop => write!(f, "OP_POP"),
             Self::AssignGlobal(i) => write!(f, "OP_ASSIGN_GLOBAL    {i}"),
             Self::GetGlobal(i) => write!(f, "OP_GET_GLOBAL    {i}"),
+            Self::JumpIfFalse(i) => write!(f, "OP_JUMP_IF_FALSE    {i}"),
         }
     }
 }

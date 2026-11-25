@@ -89,6 +89,7 @@ impl<'a> Vm<'a> {
                 }
                 OpCode::AssignGlobal(c) => self.assign_global(c)?,
                 OpCode::GetGlobal(c) => self.get_global(c)?,
+                OpCode::JumpIfFalse(i) => self.jump(i)?,
                 OpCode::Pop => _ = self.stack.pop(),
                 OpCode::Return => return Ok(()),
                 op => return Err(CarlaeError::Runtime(format!("Unknown opcode: {op}"))),
@@ -295,6 +296,18 @@ impl<'a> Vm<'a> {
                 )));
             }
         };
+        Ok(())
+    }
+
+    fn jump(&mut self, to: usize) -> Result<(), CarlaeError> {
+        if self
+            .stack
+            .last()
+            .expect("Value from if condition on top of stack")
+            .is_falsey()
+        {
+            self.ip = to;
+        }
         Ok(())
     }
 }
