@@ -4,4 +4,6 @@ if x > 2:
     print "banana"
 if y < 10:
     print "satsuma"
+else:
+    print "grape"
 print "mango"

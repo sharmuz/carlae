@@ -55,25 +55,41 @@ impl Compiler {
     }
 
     fn if_stmt(&self, chunk: &mut Chunk, clause: &IfClause) -> Result<(), CarlaeError> {
-        // Call self.expression on clause.cond
         self.expression(chunk, &clause.cond)?;
-
-        // chunk.add_op with JumpIfFalse with placeholder payload
-        chunk.add_op(
-            OpCode::JumpIfFalse(chunk.code.len() + 1),
-            *chunk.lines.last().unwrap_or(&0), // TODO: Get if keyword line num
-        );
-        let jump_idx = chunk.code.len() - 1;
-
-        // Call self.statement on all clause.then
+        let jump_idx = self.jump(chunk, OpCode::JumpIfFalse(chunk.code.len() + 1))?;
         for stmt in &clause.then {
             self.statement(chunk, stmt)?;
         }
 
-        // Patch chunk.code to set JumpIfFalse with correct payload
-        chunk.code[jump_idx] = OpCode::JumpIfFalse(chunk.code.len());
+        if let Some(else_stmts) = &clause.r#else {
+            chunk.code[jump_idx] = OpCode::JumpIfFalse(chunk.code.len() + 1);
+            let jump_idx = self.jump(chunk, OpCode::Jump(chunk.code.len() + 1))?;
+            for stmt in else_stmts {
+                self.statement(chunk, stmt)?;
+            }
+            chunk.code[jump_idx] = OpCode::Jump(chunk.code.len());
+        } else {
+            chunk.code[jump_idx] = OpCode::JumpIfFalse(chunk.code.len());
+        }
+
+        chunk.add_op(OpCode::Pop, *chunk.lines.last().unwrap_or(&0));
 
         Ok(())
+    }
+
+    fn jump(&self, chunk: &mut Chunk, op: OpCode) -> Result<usize, CarlaeError> {
+        let line = *chunk.lines.last().unwrap_or(&0);
+        let op = match op {
+            OpCode::Jump(_) | OpCode::JumpIfFalse(_) => op,
+            _ => {
+                return Err(CarlaeError::Compile(format!(
+                    "[Line {line}]: Expected valid Jump opcode to be used."
+                )));
+            }
+        };
+        chunk.add_op(op, line);
+
+        Ok(chunk.code.len() - 1)
     }
 
     fn print_stmt(&self, chunk: &mut Chunk, cfg: &PrintConfig) -> Result<(), CarlaeError> {
